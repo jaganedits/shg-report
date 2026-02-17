@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency, cn } from '@/lib/utils';
+import useViewMode from '@/lib/useViewMode';
 import { PALETTE } from '@/lib/constants';
 import { SectionHeader, ECard, ECardHeader, FormInput, Btn, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ export default function MembersPage() {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
-  const [viewMode, setViewMode] = useState('card');
+  const [viewMode, setViewMode] = useViewMode('members');
 
   if (!data) return <PageSkeleton type="members" />;
 

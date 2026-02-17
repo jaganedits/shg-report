@@ -4,6 +4,7 @@ import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency, cn } from '@/lib/utils';
+import useViewMode from '@/lib/useViewMode';
 import { MetricCard, SectionHeader, ECard, ECardHeader, TH, TD, Btn, PageSkeleton, Pagination } from '@/components/shared';
 
 const PAGE_SIZE = 10;
@@ -12,7 +13,7 @@ export default function LoansPage() {
   const lang = useLang();
   const { currentData: data, members } = useData();
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState('card');
+  const [viewMode, setViewMode] = useViewMode('loans');
 
   if (!data) return <PageSkeleton type="table" />;
 

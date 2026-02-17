@@ -4,6 +4,7 @@ import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency, cn } from '@/lib/utils';
+import useViewMode from '@/lib/useViewMode';
 import { MetricCard, SectionHeader, ECard, ECardHeader, TH, TD, Btn, PageSkeleton, Pagination } from '@/components/shared';
 
 const PAGE_SIZE = 10;
@@ -189,7 +190,7 @@ export default function MonthlyPage() {
   const { currentData: data, members, selectedYear } = useData();
   const [sel, setSel] = useState(0);
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState('card');
+  const [viewMode, setViewMode] = useViewMode('monthly');
 
   if (!data) return <PageSkeleton type="table" />;
   const md = data.months[sel];
@@ -235,10 +236,10 @@ export default function MonthlyPage() {
               />
             </div>
             <Btn onClick={() => exportExcel(md, members, lang, selectedYear)} icon={Download} variant="outline" size="sm">
-              {t(T.exportExcel, lang)}
+              <span className="hidden sm:inline">{t(T.exportExcel, lang)}</span>
             </Btn>
             <Btn onClick={() => exportPDF(md, members, lang, selectedYear)} icon={FileText} variant="outline" size="sm">
-              {t(T.exportPDF, lang)}
+              <span className="hidden sm:inline">{t(T.exportPDF, lang)}</span>
             </Btn>
           </div>
         } />
