@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2 } from 'lucide-react';
+import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2, Save } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,9 @@ export default function MembersPage() {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editNameTA, setEditNameTA] = useState('');
+  const [dialogMember, setDialogMember] = useState(null);
+  const [dialogName, setDialogName] = useState('');
+  const [dialogNameTA, setDialogNameTA] = useState('');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState(null);
@@ -77,6 +80,9 @@ export default function MembersPage() {
   const handleAdd = () => { if (!newName.trim()) return; onAdd(newName.trim(), newNameTA.trim()); setNewName(''); setNewNameTA(''); setShowAddForm(false); };
   const handleEdit = (id) => { if (!editName.trim()) return; onEdit(id, editName.trim(), editNameTA.trim()); setEditingId(null); };
   const startEdit = (m) => { setEditingId(m.id); setEditName(m.name); setEditNameTA(m.nameTA || ''); };
+  const openDialog = (m) => { setDialogMember(m); setDialogName(m.name); setDialogNameTA(m.nameTA || ''); };
+  const closeDialog = () => { setDialogMember(null); setDialogName(''); setDialogNameTA(''); };
+  const saveDialog = () => { if (!dialogName.trim() || !dialogMember) return; onEdit(dialogMember.id, dialogName.trim(), dialogNameTA.trim()); closeDialog(); };
 
   return (
     <div className="space-y-5">
@@ -144,9 +150,9 @@ export default function MembersPage() {
                         </div>
                         {isAdmin && (
                           <div className="flex items-center gap-1">
-                            <button onClick={() => startEdit(m)} aria-label={t(T.editUser, lang)} className="text-smoke hover:text-brass p-0.5"><Edit3 className="w-3 h-3" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); openDialog(m); }} aria-label={t(T.editUser, lang)} className="text-smoke hover:text-brass p-1.5 rounded-md active:bg-sand/30"><Edit3 className="w-4 h-4" /></button>
                             <ConfirmDialog
-                              trigger={<Button variant="ghost" size="icon-sm" aria-label={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby p-0.5"><Trash2 className="w-3 h-3" /></Button>}
+                              trigger={<Button variant="ghost" size="icon-sm" aria-label={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby p-1.5"><Trash2 className="w-4 h-4" /></Button>}
                               title={t(T.confirmDeleteMember, lang)}
                               description={`${t(T.confirmDeleteMemberDesc, lang)}\n\n${displayName} (#${m.id})`}
                               confirmLabel={t(T.delete, lang)}
@@ -275,6 +281,46 @@ export default function MembersPage() {
           </div>
         </ECard>
       </div>
+
+      {/* ── Edit Member Dialog (card view) ── */}
+      {dialogMember && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={closeDialog}>
+          <div className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm" />
+          <div className="relative bg-ivory rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-xl border border-sand/60 animate-fade-up" onClick={e => e.stopPropagation()}>
+            <div className="px-4 pt-4 pb-2 border-b border-sand/60 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-smoke">#{dialogMember.id}</p>
+                <h3 className="font-display text-sm font-semibold text-charcoal">{t(T.editUser, lang)}</h3>
+              </div>
+              <button onClick={closeDialog} className="text-smoke hover:text-charcoal p-1"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="block text-[10px] font-semibold text-smoke mb-1">{t(T.nameEnglish, lang)}</label>
+                <input
+                  value={dialogName}
+                  onChange={e => setDialogName(e.target.value)}
+                  className="w-full bg-cream-dark/40 border border-sand/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-smoke mb-1">{t(T.nameTamil, lang)}</label>
+                <input
+                  value={dialogNameTA}
+                  onChange={e => setDialogNameTA(e.target.value)}
+                  className="w-full bg-cream-dark/40 border border-sand/50 rounded-lg px-3 py-2 text-sm font-tamil focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+                  placeholder="தமிழ் பெயர்"
+                />
+              </div>
+            </div>
+            <div className="px-4 pb-4 pt-2 flex gap-2">
+              <Btn onClick={saveDialog} icon={Save} variant="primary" size="md" className="flex-1" disabled={!dialogName.trim()}>{t(T.save, lang)}</Btn>
+              <Btn onClick={closeDialog} icon={X} variant="ghost" size="md">{t(T.cancel, lang)}</Btn>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
