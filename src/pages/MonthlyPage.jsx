@@ -204,10 +204,10 @@ export default function MonthlyPage() {
   return (
     <div className="space-y-5">
       <SectionHeader titleKey="monthlyLedger" />
-      <div className="animate-fade-up delay-1 flex gap-1 flex-wrap">
+      <div className="animate-fade-up delay-1 grid grid-cols-6 md:flex gap-1">
         {data.months.map((m, i) => (
           <button key={i} onClick={() => { setSel(i); setPage(1); }}
-            className={`px-3 py-1.5 text-[11px] font-medium rounded-full transition-all duration-300 ${sel === i ? 'bg-terracotta-deep text-cream shadow-md shadow-terracotta/20 scale-105' : 'bg-sand/50 text-smoke hover:bg-sand hover:text-charcoal'}`}>{m.month.substring(0, 3)}</button>
+            className={`px-1 md:px-3 py-1.5 text-[11px] font-medium rounded-full transition-all duration-300 text-center ${sel === i ? 'bg-terracotta-deep text-cream shadow-md shadow-terracotta/20 scale-105' : 'bg-sand/50 text-smoke hover:bg-sand hover:text-charcoal'}`}>{m.month.substring(0, 3)}</button>
         ))}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">

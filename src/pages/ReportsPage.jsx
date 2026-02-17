@@ -79,7 +79,7 @@ export default function ReportsPage() {
     });
   };
 
-  const ViewToggle = () => (
+  const viewToggle = (
     <div className="flex items-center gap-1">
       <button onClick={() => setViewMode('card')}
         className={cn('p-1.5 rounded-md transition-colors', viewMode === 'card' ? 'bg-terracotta-deep text-cream' : 'text-smoke hover:bg-sand/50')}>
@@ -247,7 +247,7 @@ export default function ReportsPage() {
           </ECard>
           <ECard delay={3}>
             <ECardHeader title={`${memberName} — ${t(T.memberMonthlyReport, lang)} (${year})`}
-              action={<ViewToggle />} />
+              action={viewToggle} />
 
             {/* ── Card View ── */}
             {viewMode === 'card' && (
@@ -330,7 +330,7 @@ export default function ReportsPage() {
           </ECard>
           <ECard delay={3}>
             <ECardHeader title={`${memberName} — ${t(T.memberYearlyReport, lang)}`}
-              action={<ViewToggle />} />
+              action={viewToggle} />
 
             {/* ── Card View ── */}
             {viewMode === 'card' && (
