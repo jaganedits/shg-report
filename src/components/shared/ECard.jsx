@@ -15,9 +15,9 @@ export function ECard({ children, className = '', delay = 0 }) {
 export function ECardHeader({ titleKey, title, action }) {
   const lang = useLang();
   return (
-    <div className="px-4 pt-3 pb-2 border-b border-sand/60 flex items-center justify-between">
-      <h3 className={`font-display text-sm font-semibold text-charcoal ${lang === 'ta' ? 'font-tamil' : ''}`}>{titleKey ? t(T[titleKey], lang) : title}</h3>
-      {action}
+    <div className="px-4 pt-3 pb-2 border-b border-sand/60 flex items-center justify-between gap-2 flex-wrap">
+      <h3 className={`font-display text-sm font-semibold text-charcoal min-w-0 truncate ${lang === 'ta' ? 'font-tamil' : ''}`}>{titleKey ? t(T[titleKey], lang) : title}</h3>
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

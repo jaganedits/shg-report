@@ -217,8 +217,8 @@ export default function DataEntryPage() {
             <div className="flex items-center gap-1">
               <ViewToggle />
               {!groupClosed && (editData
-                ? <div className="flex gap-2"><Btn onClick={saveData} icon={Save} variant="success" size="xs">{t(T.save, lang)}</Btn><Btn onClick={() => setEditData(null)} icon={X} variant="ghost" size="xs">{t(T.cancel, lang)}</Btn></div>
-                : <Btn onClick={startEditing} icon={PenLine} variant="primary" size="xs">{t(T.edit, lang)}</Btn>
+                ? <div className="flex gap-1.5"><Btn onClick={saveData} icon={Save} variant="success" size="xs"><span className="hidden sm:inline">{t(T.save, lang)}</span></Btn><Btn onClick={() => setEditData(null)} icon={X} variant="ghost" size="xs"><span className="hidden sm:inline">{t(T.cancel, lang)}</span></Btn></div>
+                : <Btn onClick={startEditing} icon={PenLine} variant="primary" size="xs"><span className="hidden sm:inline">{t(T.edit, lang)}</span></Btn>
               )}
             </div>
           } />
