@@ -241,6 +241,10 @@ const T = {
   negativeNotAllowed: { en: 'Negative values not allowed', ta: 'எதிர்மறை மதிப்புகள் அனுமதிக்கப்படாது' },
   repaymentExceedsBalance: { en: 'Repayment exceeds outstanding balance', ta: 'திருப்பி செலுத்தல் நிலுவையை மீறுகிறது' },
   dataLoadFailed: { en: 'Failed to load data. Showing cached data.', ta: 'தரவை ஏற்ற இயலவில்லை. பதிவிட்ட தரவு காண்பிக்கப்படுகிறது.' },
+
+  // ─── View Toggle ───
+  cardView: { en: 'Cards', ta: 'அட்டை' },
+  tableView: { en: 'Table', ta: 'அட்டவணை' },
 };
 
 export default T;

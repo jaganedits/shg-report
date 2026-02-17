@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { PALETTE } from '@/lib/constants';
 import { SectionHeader, ECard, ECardHeader, FormInput, Btn, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ export default function MembersPage() {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
+  const [viewMode, setViewMode] = useState('card');
 
   if (!data) return <PageSkeleton type="members" />;
 
@@ -100,7 +101,24 @@ export default function MembersPage() {
       )}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
         <ECard className="lg:col-span-3" delay={1}>
-          <ECardHeader titleKey="memberSummary" />
+          <ECardHeader titleKey="memberSummary" action={
+            <div className="flex gap-1">
+              <Btn
+                onClick={() => setViewMode('card')}
+                icon={LayoutGrid}
+                variant={viewMode === 'card' ? 'secondary' : 'ghost'}
+                size="sm"
+                aria-label={t(T.cardView, lang)}
+              />
+              <Btn
+                onClick={() => setViewMode('table')}
+                icon={Table2}
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="sm"
+                aria-label={t(T.tableView, lang)}
+              />
+            </div>
+          } />
           {/* Search bar */}
           <div className="px-4 pt-3">
             <div className="relative">
@@ -110,65 +128,21 @@ export default function MembersPage() {
                 className="w-full pl-9 pr-3 py-2 bg-cream-dark/30 border border-sand/50 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-terracotta/30 placeholder:text-smoke/50" />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[580px]">
-              <thead><tr className="bg-cream-dark/50">
-                <TH align="left">#</TH>
-                <TH align="left">
-                  <span onClick={() => toggleSort('name')} className="cursor-pointer flex items-center gap-1 hover:text-charcoal transition-colors">
-                    {t(T.name, lang)}
-                    {sortKey === 'name' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                  </span>
-                </TH>
-                <TH>
-                  <span onClick={() => toggleSort('totalSaved')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
-                    {t(T.totalSaved, lang)}
-                    {sortKey === 'totalSaved' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                  </span>
-                </TH>
-                <TH>
-                  <span onClick={() => toggleSort('finalCumulative')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
-                    {t(T.cumulative, lang)}
-                    {sortKey === 'finalCumulative' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                  </span>
-                </TH>
-                <TH>
-                  <span onClick={() => toggleSort('totalLoan')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
-                    {t(T.loan, lang)}
-                    {sortKey === 'totalLoan' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                  </span>
-                </TH>
-                <TH>
-                  <span onClick={() => toggleSort('totalInterest')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
-                    {t(T.interest, lang)}
-                    {sortKey === 'totalInterest' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                  </span>
-                </TH>
-                {isAdmin && <TH>{t(T.actions, lang)}</TH>}
-              </tr></thead>
-              <tbody>
+
+          {viewMode === 'card' ? (
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-1 gap-3">
                 {pagedSummaries.map((m) => {
                   const displayName = lang === 'ta' && m.nameTA && m.nameTA !== m.name ? m.nameTA : m.name;
                   return (
-                    <tr key={m.id} className="border-b border-sand/40 hover:bg-cream-dark/30 transition-colors">
-                      <TD align="left" className="font-mono text-xs text-smoke">{m.id}</TD>
-                      <TD align="left">
-                        {editingId === m.id ? (
+                    <div key={m.id} className="bg-cream-dark/20 rounded-lg p-3 border border-sand/40">
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <span className="text-xs text-smoke">#{m.id}</span>
+                          <p className="font-medium text-sm">{displayName}</p>
+                        </div>
+                        {isAdmin && (
                           <div className="flex items-center gap-1">
-                            <input value={editName} onChange={e => setEditName(e.target.value)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-brass/40" />
-                            <input value={editNameTA} onChange={e => setEditNameTA(e.target.value)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 font-tamil focus:outline-none focus:ring-1 focus:ring-brass/40" placeholder="Tamil" />
-                            <button onClick={() => handleEdit(m.id)} className="text-forest hover:text-forest-light"><Check className="w-3.5 h-3.5" /></button>
-                            <button onClick={() => setEditingId(null)} className="text-smoke hover:text-ruby"><X className="w-3.5 h-3.5" /></button>
-                          </div>
-                        ) : <span className="font-medium">{displayName}</span>}
-                      </TD>
-                      <TD className="font-mono">{formatCurrency(m.totalSaved)}</TD>
-                      <TD className="font-mono font-semibold text-brass-dark">{formatCurrency(m.finalCumulative)}</TD>
-                      <TD>{m.totalLoan > 0 ? <span className="bg-ruby/10 text-ruby px-2 py-0.5 rounded-full text-xs font-semibold">{formatCurrency(m.totalLoan)}</span> : <span className="text-sand-dark">—</span>}</TD>
-                      <TD>{m.totalInterest > 0 ? <span className="text-forest font-medium">{formatCurrency(m.totalInterest)}</span> : <span className="text-sand-dark">—</span>}</TD>
-                      {isAdmin && (
-                        <TD>
-                          <div className="flex items-center gap-1 justify-end">
                             <button onClick={() => startEdit(m)} aria-label={t(T.editUser, lang)} className="text-smoke hover:text-brass p-0.5"><Edit3 className="w-3 h-3" /></button>
                             <ConfirmDialog
                               trigger={<Button variant="ghost" size="icon-sm" aria-label={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby p-0.5"><Trash2 className="w-3 h-3" /></Button>}
@@ -179,14 +153,98 @@ export default function MembersPage() {
                               variant="danger"
                             />
                           </div>
-                        </TD>
-                      )}
-                    </tr>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div><span className="text-smoke">{t(T.totalSaved, lang)}:</span> <span className="font-mono">{formatCurrency(m.totalSaved)}</span></div>
+                        <div><span className="text-smoke">{t(T.cumulative, lang)}:</span> <span className="font-mono text-brass-dark font-semibold">{formatCurrency(m.finalCumulative)}</span></div>
+                        {m.totalLoan > 0 && <div><span className="text-smoke">{t(T.loan, lang)}:</span> <span className="font-mono text-ruby">{formatCurrency(m.totalLoan)}</span></div>}
+                        {m.totalInterest > 0 && <div><span className="text-smoke">{t(T.interest, lang)}:</span> <span className="font-mono text-forest">{formatCurrency(m.totalInterest)}</span></div>}
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[580px]">
+                <thead><tr className="bg-cream-dark/50">
+                  <TH align="left">#</TH>
+                  <TH align="left">
+                    <span onClick={() => toggleSort('name')} className="cursor-pointer flex items-center gap-1 hover:text-charcoal transition-colors">
+                      {t(T.name, lang)}
+                      {sortKey === 'name' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
+                    </span>
+                  </TH>
+                  <TH>
+                    <span onClick={() => toggleSort('totalSaved')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                      {t(T.totalSaved, lang)}
+                      {sortKey === 'totalSaved' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
+                    </span>
+                  </TH>
+                  <TH>
+                    <span onClick={() => toggleSort('finalCumulative')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                      {t(T.cumulative, lang)}
+                      {sortKey === 'finalCumulative' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
+                    </span>
+                  </TH>
+                  <TH>
+                    <span onClick={() => toggleSort('totalLoan')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                      {t(T.loan, lang)}
+                      {sortKey === 'totalLoan' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
+                    </span>
+                  </TH>
+                  <TH>
+                    <span onClick={() => toggleSort('totalInterest')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                      {t(T.interest, lang)}
+                      {sortKey === 'totalInterest' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
+                    </span>
+                  </TH>
+                  {isAdmin && <TH>{t(T.actions, lang)}</TH>}
+                </tr></thead>
+                <tbody>
+                  {pagedSummaries.map((m) => {
+                    const displayName = lang === 'ta' && m.nameTA && m.nameTA !== m.name ? m.nameTA : m.name;
+                    return (
+                      <tr key={m.id} className="border-b border-sand/40 hover:bg-cream-dark/30 transition-colors">
+                        <TD align="left" className="font-mono text-xs text-smoke">{m.id}</TD>
+                        <TD align="left">
+                          {editingId === m.id ? (
+                            <div className="flex items-center gap-1">
+                              <input value={editName} onChange={e => setEditName(e.target.value)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-brass/40" />
+                              <input value={editNameTA} onChange={e => setEditNameTA(e.target.value)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 font-tamil focus:outline-none focus:ring-1 focus:ring-brass/40" placeholder="Tamil" />
+                              <button onClick={() => handleEdit(m.id)} className="text-forest hover:text-forest-light"><Check className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => setEditingId(null)} className="text-smoke hover:text-ruby"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                          ) : <span className="font-medium">{displayName}</span>}
+                        </TD>
+                        <TD className="font-mono">{formatCurrency(m.totalSaved)}</TD>
+                        <TD className="font-mono font-semibold text-brass-dark">{formatCurrency(m.finalCumulative)}</TD>
+                        <TD>{m.totalLoan > 0 ? <span className="bg-ruby/10 text-ruby px-2 py-0.5 rounded-full text-xs font-semibold">{formatCurrency(m.totalLoan)}</span> : <span className="text-sand-dark">—</span>}</TD>
+                        <TD>{m.totalInterest > 0 ? <span className="text-forest font-medium">{formatCurrency(m.totalInterest)}</span> : <span className="text-sand-dark">—</span>}</TD>
+                        {isAdmin && (
+                          <TD>
+                            <div className="flex items-center gap-1 justify-end">
+                              <button onClick={() => startEdit(m)} aria-label={t(T.editUser, lang)} className="text-smoke hover:text-brass p-0.5"><Edit3 className="w-3 h-3" /></button>
+                              <ConfirmDialog
+                                trigger={<Button variant="ghost" size="icon-sm" aria-label={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby p-0.5"><Trash2 className="w-3 h-3" /></Button>}
+                                title={t(T.confirmDeleteMember, lang)}
+                                description={`${t(T.confirmDeleteMemberDesc, lang)}\n\n${displayName} (#${m.id})`}
+                                confirmLabel={t(T.delete, lang)}
+                                onConfirm={() => onRemove(m.id)}
+                                variant="danger"
+                              />
+                            </div>
+                          </TD>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
           <Pagination currentPage={safePage} totalPages={totalPages} onPageChange={setPage} totalItems={sorted.length} pageSize={PAGE_SIZE} />
         </ECard>
         <ECard className="lg:col-span-2" delay={2}>

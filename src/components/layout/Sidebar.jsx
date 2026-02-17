@@ -40,7 +40,7 @@ export default function Sidebar() {
 
       {/* Mobile: fixed bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-ivory/95 backdrop-blur-md border-t border-sand">
-        <div className="flex items-center justify-around px-1 py-1 pb-[env(safe-area-inset-bottom,4px)]">
+        <div className="flex items-center justify-around px-1 py-1.5 pb-[env(safe-area-inset-bottom,4px)]">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path || location.pathname === '/' + item.id;
@@ -49,16 +49,13 @@ export default function Sidebar() {
                 key={item.id}
                 to={item.path}
                 className={cn(
-                  'relative flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg transition-all duration-200 min-w-0 flex-1',
+                  'relative flex items-center justify-center p-2 rounded-lg transition-all duration-200',
                   isActive
                     ? 'text-terracotta-deep'
                     : 'text-smoke'
                 )}
               >
-                <Icon className={cn('w-4 h-4', isActive && 'scale-110')} />
-                <span className={cn('text-[8px] font-medium truncate w-full text-center leading-tight', lang === 'ta' ? 'font-tamil' : 'font-body')}>
-                  {t(T[item.key], lang)}
-                </span>
+                <Icon className={cn('w-5 h-5', isActive && 'scale-110')} />
                 {isActive && <span className="absolute top-0 left-2 right-2 h-[2px] bg-gradient-to-r from-terracotta to-brass rounded-full" />}
               </NavLink>
             );
