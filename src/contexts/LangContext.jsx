@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 const STORAGE_KEY = 'shg-lang';
 const DEFAULT_LANG = 'ta';
@@ -9,7 +9,9 @@ function getStoredLang() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'en' || stored === 'ta') return stored;
-  } catch (_) {}
+  } catch {
+    // Ignore storage read errors.
+  }
   return DEFAULT_LANG;
 }
 
@@ -18,7 +20,9 @@ export function LangProvider({ children }) {
 
   const setLang = (newLang) => {
     setLangState(newLang);
-    try { localStorage.setItem(STORAGE_KEY, newLang); } catch (_) {}
+    try { localStorage.setItem(STORAGE_KEY, newLang); } catch {
+      // Ignore storage write errors.
+    }
   };
 
   return (

@@ -7,9 +7,10 @@
  * Prerequisites:
  *   - Firebase project configured with Firestore
  *   - .env.local with VITE_FIREBASE_* variables
+ *   - SHG_ADMIN_INITIAL_PASSWORD set in env (or .env.local)
  *
  * This script creates:
- *   1. Admin user in Firebase Auth (admin@shreeannai-4d014.firebaseapp.com / admin123)
+ *   1. Admin user in Firebase Auth (admin@shreeannai-4d014.firebaseapp.com)
  *   2. Group info document
  *   3. 14 member documents
  *   4. 2024 year data with sample financial data
@@ -17,7 +18,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, doc, setDoc, collection } from 'firebase/firestore';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -85,6 +86,22 @@ const MONTHS = [
 ];
 
 const INTEREST_RATE = 0.02;
+const STRONG_PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,64}$/;
+
+function getAdminPassword() {
+  const password = (process.env.SHG_ADMIN_INITIAL_PASSWORD || env.SHG_ADMIN_INITIAL_PASSWORD || '').trim();
+  if (!password) {
+    throw new Error('SHG_ADMIN_INITIAL_PASSWORD is required (env or .env.local)');
+  }
+  if (!STRONG_PASSWORD_REGEX.test(password)) {
+    throw new Error('SHG_ADMIN_INITIAL_PASSWORD must be 8-64 chars and include at least one letter and one number');
+  }
+  const weakDefaults = new Set(['admin', 'admin123', 'password', 'changeme123']);
+  if (weakDefaults.has(password.toLowerCase())) {
+    throw new Error('SHG_ADMIN_INITIAL_PASSWORD is too weak. Choose a non-default password');
+  }
+  return password;
+}
 
 function recalculateMonth(monthMembers, prevMonthMembers) {
   return monthMembers.map(mem => {
@@ -133,13 +150,13 @@ async function seed() {
 
   // 1. Create admin user in Firebase Auth
   const adminEmail = 'admin@shreeannai-4d014.firebaseapp.com';
-  const adminPassword = 'admin123';
+  const adminPassword = getAdminPassword();
   let adminUid;
 
   try {
     const cred = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
     adminUid = cred.user.uid;
-    console.log('✅ Admin user created:', adminEmail, '/ admin123');
+    console.log('✅ Admin user created:', adminEmail);
   } catch (err) {
     if (err.code === 'auth/email-already-in-use') {
       console.log('ℹ️  Admin user already exists, signing in...');
@@ -158,6 +175,7 @@ async function seed() {
     fullName: 'Administrator',
     fullNameTA: 'நிர்வாகி',
     role: 'admin',
+    status: 'active',
     email: adminEmail,
   });
   console.log('✅ Admin profile stored in Firestore');
@@ -184,7 +202,7 @@ async function seed() {
   console.log('\n🎉 Seeding complete!');
   console.log('\n📋 Login credentials:');
   console.log('   Username: admin');
-  console.log('   Password: admin123');
+  console.log('   Password: [value from SHG_ADMIN_INITIAL_PASSWORD]');
   console.log('');
 
   process.exit(0);

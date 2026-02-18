@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const MOBILE_BREAKPOINT = 768; // md breakpoint in Tailwind
 
@@ -15,7 +15,9 @@ export default function useViewMode(pageKey) {
     try {
       const stored = sessionStorage.getItem(storageKey);
       if (stored === 'card' || stored === 'table') return stored;
-    } catch {}
+    } catch {
+      // Ignore storage access errors.
+    }
     // Default based on screen width
     return window.innerWidth < MOBILE_BREAKPOINT ? 'card' : 'table';
   };
@@ -24,7 +26,9 @@ export default function useViewMode(pageKey) {
 
   const updateViewMode = (mode) => {
     setViewMode(mode);
-    try { sessionStorage.setItem(storageKey, mode); } catch {}
+    try { sessionStorage.setItem(storageKey, mode); } catch {
+      // Ignore storage access errors.
+    }
   };
 
   return [viewMode, updateViewMode];

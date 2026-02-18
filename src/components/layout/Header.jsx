@@ -11,7 +11,7 @@ export default function Header() {
   const lang = useLang();
   const { setLang } = useLangContext();
   const { user, logout } = useAuth();
-  const { members, selectedYear, setSelectedYear, years, groupClosed, groupInfo } = useData();
+  const { selectedYear, setSelectedYear, years, groupClosed, groupInfo } = useData();
 
   if (!user) return (
     <header className="relative overflow-hidden bg-terracotta-deep text-cream grain">

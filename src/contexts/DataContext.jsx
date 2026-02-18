@@ -5,6 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MEMBERS as DEFAULT_MEMBERS, SAMPLE_YEAR_DATA, MONTHS, getYearSummary, recalculateAllMonths } from '@/data/sampleData';
 import { GROUP_INFO } from '@/data/sampleData';
 import { toast } from '@/hooks/use-toast';
+import {
+  assertMemberRecord,
+  assertValidPersonName,
+  assertValidYear,
+  isPermissionDeniedError,
+} from '@/lib/validators';
 
 const DataContext = createContext(null);
 
@@ -14,7 +20,7 @@ const currentIndianFY = (() => {
 })();
 
 export function DataProvider({ children }) {
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const currentUsername = user?.username || 'system';
 
   const [allYearsData, setAllYearsData] = useState(() => {
@@ -43,8 +49,40 @@ export function DataProvider({ children }) {
   const [groupClosed, setGroupClosed] = useState(false);
   const [firestoreLoaded, setFirestoreLoaded] = useState(!isFirebaseConfigured);
 
+  const requireAdminAction = useCallback((actionLabel) => {
+    if (isAdmin) return true;
+    toast({
+      title: 'Admin access required',
+      description: `Only admins can ${actionLabel}.`,
+      variant: 'destructive',
+      duration: 4000,
+    });
+    return false;
+  }, [isAdmin]);
+
+  const showWriteError = useCallback((err, fallbackTitle) => {
+    console.error(fallbackTitle, err);
+    if (isPermissionDeniedError(err)) {
+      toast({
+        title: 'Permission denied',
+        description: 'Your account does not have permission to perform this action.',
+        variant: 'destructive',
+        duration: 5000,
+      });
+      return;
+    }
+    toast({
+      title: fallbackTitle,
+      description: err?.message || 'Unexpected error',
+      variant: 'destructive',
+      duration: 5000,
+    });
+  }, []);
+
   useEffect(() => {
     if (!isFirebaseConfigured) return;
+    if (authLoading) return;
+    if (!user?.uid) return;
     const loadFromFirestore = async () => {
       try {
         const gInfo = await firestore.getGroupInfo();
@@ -79,7 +117,7 @@ export function DataProvider({ children }) {
       }
     };
     loadFromFirestore();
-  }, []);
+  }, [authLoading, user?.uid]);
 
   const years = Object.keys(allYearsData).map(Number).sort();
   const currentData = allYearsData[selectedYear];
@@ -87,29 +125,49 @@ export function DataProvider({ children }) {
 
   const saveYearToFirestore = useCallback(async (year, yearData) => {
     if (!isFirebaseConfigured) return;
-    try { await firestore.saveYearData(year, yearData, currentUsername); }
-    catch (err) { console.error('Error saving year data:', err); }
-  }, [currentUsername]);
+    try {
+      const safeYear = assertValidYear(year);
+      await firestore.saveYearData(safeYear, yearData, currentUsername);
+    } catch (err) {
+      showWriteError(err, 'Failed to save year data');
+    }
+  }, [currentUsername, showWriteError]);
 
   const updateMonthData = useCallback((year, monthIndex, newMembers) => {
-    // Build recalculated data and change summary OUTSIDE state updater
-    // to avoid React StrictMode double-firing side effects
-    const yearData = allYearsData[year];
-    if (!yearData) return;
+    if (!requireAdminAction('update financial data')) return;
+    if (groupClosed) {
+      toast({ title: 'Group is closed. Data entry is disabled.', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
+    let safeYear;
+    let safeMembers;
+    try {
+      safeYear = assertValidYear(year);
+      if (!Array.isArray(newMembers)) throw new Error('Invalid month payload');
+      safeMembers = newMembers.map(assertMemberRecord);
+    } catch (err) {
+      toast({ title: err.message || 'Invalid input', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
+    const yearData = allYearsData[safeYear];
+    if (!yearData || !yearData.months?.[monthIndex]) return;
+
     const monthName = yearData.months[monthIndex]?.month || `Month ${monthIndex + 1}`;
     const oldMembers = yearData.months[monthIndex]?.members || [];
     const months = yearData.months.map((m, i) => {
       if (i !== monthIndex) return m;
-      return { ...m, members: newMembers };
+      return { ...m, members: safeMembers };
     });
     const recalculated = recalculateAllMonths({ ...yearData, months });
 
-    // Build detailed change summary
-    const totalSaving = newMembers.reduce((s, m) => s + (m.saving || 0), 0);
-    const totalNewLoan = newMembers.reduce((s, m) => s + (m.loanTaken || 0), 0);
-    const totalRepayment = newMembers.reduce((s, m) => s + (m.loanRepayment || 0), 0);
+    const totalSaving = safeMembers.reduce((s, m) => s + (m.saving || 0), 0);
+    const totalNewLoan = safeMembers.reduce((s, m) => s + (m.loanTaken || 0), 0);
+    const totalRepayment = safeMembers.reduce((s, m) => s + (m.loanRepayment || 0), 0);
     const changedMembers = [];
-    newMembers.forEach(nm => {
+
+    safeMembers.forEach((nm) => {
       const om = oldMembers.find(o => o.memberId === nm.memberId);
       if (!om) return;
       const diffs = [];
@@ -122,16 +180,15 @@ export function DataProvider({ children }) {
       }
     });
 
-    // Update state (pure — no side effects)
-    setAllYearsData(prev => ({ ...prev, [year]: recalculated }));
+    setAllYearsData(prev => ({ ...prev, [safeYear]: recalculated }));
 
-    // Side effects OUTSIDE state updater — runs only once
-    saveYearToFirestore(year, recalculated);
-    firestore.logActivity({
+    saveYearToFirestore(safeYear, recalculated);
+    void firestore.logActivity({
       type: 'data_entry',
       user: currentUsername,
-      detail: `Updated ${monthName} ${year} data`,
-      month: monthName, year,
+      detail: `Updated ${monthName} ${safeYear} data`,
+      month: monthName,
+      year: safeYear,
       summary: {
         totalSaving,
         totalNewLoan,
@@ -144,13 +201,27 @@ export function DataProvider({ children }) {
         changes: cm.diffs.join(', '),
       })),
     });
-    toast({ title: `${monthName} ${year} data saved`, variant: 'success' });
-  }, [allYearsData, saveYearToFirestore, currentUsername, members]);
+    toast({ title: `${monthName} ${safeYear} data saved`, variant: 'success' });
+  }, [allYearsData, currentUsername, groupClosed, members, requireAdminAction, saveYearToFirestore]);
 
   const addNewYear = useCallback((year) => {
-    if (allYearsData[year]) return;
+    if (!requireAdminAction('add a new year')) return;
+    if (groupClosed) {
+      toast({ title: 'Group is closed. Data entry is disabled.', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
+    let safeYear;
+    try {
+      safeYear = assertValidYear(year);
+    } catch (err) {
+      toast({ title: err.message || 'Invalid year', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
+    if (allYearsData[safeYear]) return;
     const newYearData = {
-      year,
+      year: safeYear,
       months: MONTHS.map((month, i) => ({
         month, monthIndex: i,
         members: members.map(m => ({
@@ -162,21 +233,33 @@ export function DataProvider({ children }) {
         totalSaving: 0, totalCumulative: 0,
       })),
     };
-    setAllYearsData(prev => ({ ...prev, [year]: newYearData }));
-    setSelectedYear(year);
-    saveYearToFirestore(year, newYearData);
-    firestore.logActivity({
+    setAllYearsData(prev => ({ ...prev, [safeYear]: newYearData }));
+    setSelectedYear(safeYear);
+    saveYearToFirestore(safeYear, newYearData);
+    void firestore.logActivity({
       type: 'year_add',
       user: currentUsername,
-      detail: `Added new year ${year}`,
-      year,
+      detail: `Added new year ${safeYear}`,
+      year: safeYear,
     });
-    toast({ title: `Year ${year} added`, variant: 'success' });
-  }, [allYearsData, members, saveYearToFirestore, currentUsername]);
+    toast({ title: `Year ${safeYear} added`, variant: 'success' });
+  }, [allYearsData, currentUsername, groupClosed, members, requireAdminAction, saveYearToFirestore]);
 
   const addMember = useCallback(async (name, nameTA) => {
+    if (!requireAdminAction('add members')) return;
+
+    let safeName;
+    let safeNameTA;
+    try {
+      safeName = assertValidPersonName(name, 'Member name');
+      safeNameTA = assertValidPersonName(nameTA, 'Member name (Tamil)', { optional: true }) || safeName;
+    } catch (err) {
+      toast({ title: err.message || 'Invalid member data', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
     const maxId = members.reduce((max, m) => Math.max(max, m.id), 0);
-    const newMember = { id: maxId + 1, name, nameTA: nameTA || name };
+    const newMember = { id: maxId + 1, name: safeName, nameTA: safeNameTA };
     setMembers(prev => [...prev, newMember]);
     // Build updated data outside state updater to avoid StrictMode double-fire
     const updatedYears = { ...allYearsData };
@@ -199,27 +282,37 @@ export function DataProvider({ children }) {
       saveYearToFirestore(Number(year), updatedYears[year]);
     });
     if (isFirebaseConfigured) {
-      try { await firestore.addMember({ id: newMember.id, name, nameTA: nameTA || name }, currentUsername); }
-      catch (err) { console.error('Error adding member:', err); }
+      try {
+        await firestore.addMember({ id: newMember.id, name: safeName, nameTA: safeNameTA }, currentUsername);
+      } catch (err) {
+        showWriteError(err, 'Failed to add member');
+      }
     }
-    firestore.logActivity({
+    void firestore.logActivity({
       type: 'member_add',
       user: currentUsername,
-      detail: `Added member "${name}"`,
-      target: name,
+      detail: `Added member "${safeName}"`,
+      target: safeName,
     });
-    toast({ title: `Member "${name}" added`, variant: 'success' });
-  }, [members, allYearsData, saveYearToFirestore, currentUsername]);
+    toast({ title: `Member "${safeName}" added`, variant: 'success' });
+  }, [allYearsData, currentUsername, members, requireAdminAction, saveYearToFirestore, showWriteError]);
 
   const removeMember = useCallback(async (memberId) => {
-    setMembers(prev => prev.filter(m => m.id !== memberId));
+    if (!requireAdminAction('remove members')) return;
+    const safeMemberId = Number(memberId);
+    if (!Number.isInteger(safeMemberId) || safeMemberId <= 0) {
+      toast({ title: 'Invalid member id', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
+    setMembers(prev => prev.filter(m => m.id !== safeMemberId));
     // Build updated data outside state updater to avoid StrictMode double-fire
     const updatedYears = { ...allYearsData };
     Object.keys(updatedYears).forEach(year => {
       updatedYears[year] = {
         ...updatedYears[year],
         months: updatedYears[year].months.map(m => {
-          const filtered = m.members.filter(mem => mem.memberId !== memberId);
+          const filtered = m.members.filter(mem => mem.memberId !== safeMemberId);
           return { ...m, members: filtered,
             totalSaving: filtered.reduce((s, mem) => s + mem.saving, 0),
             totalCumulative: filtered.reduce((s, mem) => s + mem.cumulative, 0),
@@ -233,60 +326,96 @@ export function DataProvider({ children }) {
       saveYearToFirestore(Number(year), updatedYears[year]);
     });
     if (isFirebaseConfigured) {
-      try { await firestore.deleteMember(memberId); }
-      catch (err) { console.error('Error removing member:', err); }
+      try {
+        await firestore.deleteMember(safeMemberId);
+      } catch (err) {
+        showWriteError(err, 'Failed to remove member');
+      }
     }
-    firestore.logActivity({
+    void firestore.logActivity({
       type: 'member_remove',
       user: currentUsername,
-      detail: `Removed member #${memberId}`,
-      target: String(memberId),
+      detail: `Removed member #${safeMemberId}`,
+      target: String(safeMemberId),
     });
     toast({ title: 'Member removed', variant: 'success' });
-  }, [allYearsData, saveYearToFirestore, currentUsername]);
+  }, [allYearsData, currentUsername, requireAdminAction, saveYearToFirestore, showWriteError]);
 
   const editMember = useCallback(async (memberId, name, nameTA) => {
-    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, name, nameTA: nameTA || name } : m));
-    if (isFirebaseConfigured) {
-      try { await firestore.updateMember(memberId, { name, nameTA: nameTA || name }, currentUsername); }
-      catch (err) { console.error('Error updating member:', err); }
+    if (!requireAdminAction('edit members')) return;
+
+    const safeMemberId = Number(memberId);
+    if (!Number.isInteger(safeMemberId) || safeMemberId <= 0) {
+      toast({ title: 'Invalid member id', variant: 'destructive', duration: 4000 });
+      return;
     }
-    firestore.logActivity({
+
+    let safeName;
+    let safeNameTA;
+    try {
+      safeName = assertValidPersonName(name, 'Member name');
+      safeNameTA = assertValidPersonName(nameTA, 'Member name (Tamil)', { optional: true }) || safeName;
+    } catch (err) {
+      toast({ title: err.message || 'Invalid member data', variant: 'destructive', duration: 4000 });
+      return;
+    }
+
+    setMembers(prev => prev.map(m => m.id === safeMemberId ? { ...m, name: safeName, nameTA: safeNameTA } : m));
+    if (isFirebaseConfigured) {
+      try {
+        await firestore.updateMember(safeMemberId, { name: safeName, nameTA: safeNameTA }, currentUsername);
+      } catch (err) {
+        showWriteError(err, 'Failed to update member');
+      }
+    }
+    void firestore.logActivity({
       type: 'member_edit',
       user: currentUsername,
-      detail: `Edited member "${name}"`,
-      target: name,
+      detail: `Edited member "${safeName}"`,
+      target: safeName,
     });
-    toast({ title: `Member "${name}" updated`, variant: 'success' });
-  }, [currentUsername]);
+    toast({ title: `Member "${safeName}" updated`, variant: 'success' });
+  }, [currentUsername, requireAdminAction, showWriteError]);
 
   const closeGroup = useCallback(async () => {
+    if (!requireAdminAction('close the group')) return;
     setGroupClosed(true);
     if (isFirebaseConfigured) {
-      try { await firestore.updateGroupInfo({ isClosed: true }, currentUsername); }
-      catch (err) { console.error('Error closing group:', err); }
+      try {
+        await firestore.updateGroupInfo({ isClosed: true }, currentUsername);
+      } catch (err) {
+        showWriteError(err, 'Failed to close group');
+        setGroupClosed(false);
+        return;
+      }
     }
-    firestore.logActivity({
+    void firestore.logActivity({
       type: 'group_close',
       user: currentUsername,
       detail: `Closed the group`,
     });
     toast({ title: 'Group closed', variant: 'destructive' });
-  }, [currentUsername]);
+  }, [currentUsername, requireAdminAction, showWriteError]);
 
   const reopenGroup = useCallback(async () => {
+    if (!requireAdminAction('reopen the group')) return;
     setGroupClosed(false);
     if (isFirebaseConfigured) {
-      try { await firestore.updateGroupInfo({ isClosed: false }, currentUsername); }
-      catch (err) { console.error('Error reopening group:', err); }
+      try {
+        await firestore.updateGroupInfo({ isClosed: false }, currentUsername);
+      } catch (err) {
+        showWriteError(err, 'Failed to reopen group');
+        setGroupClosed(true);
+        return;
+      }
     }
-    firestore.logActivity({
+    void firestore.logActivity({
       type: 'group_reopen',
       user: currentUsername,
       detail: `Reopened the group`,
     });
     toast({ title: 'Group reopened', variant: 'success' });
-  }, [currentUsername]);
+  }, [currentUsername, requireAdminAction, showWriteError]);
 
   return (
     <DataContext.Provider value={{

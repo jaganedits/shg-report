@@ -12,14 +12,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { SectionHeader, ECard, ECardHeader, FormInput, PasswordInput, Btn } from '@/components/shared';
+import {
+  assertStrongPassword,
+  assertValidPersonName,
+  assertValidUserRole,
+  assertValidUsername,
+  isPermissionDeniedError,
+} from '@/lib/validators';
 
 export default function SettingsPage() {
   const lang = useLang();
-  const { user, isAdmin, registeredUsers, registerUser: onRegister, updateUser: onUpdateUser, deleteUser: onDeleteUser } = useAuth();
+  const {
+    user,
+    isAdmin,
+    registeredUsers,
+    registerUser: onRegister,
+    updateUser: onUpdateUser,
+    deactivateUser: onDeactivateUser,
+    reactivateUser: onReactivateUser,
+    changeMyPassword: onChangeMyPassword,
+  } = useAuth();
   const { members, groupClosed, closeGroup: onCloseGroup, reopenGroup: onReopenGroup, allYearsData, groupInfo } = useData();
   const { toast } = useToast();
 
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [closeReason, setCloseReason] = useState('');
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [newFullName, setNewFullName] = useState('');
@@ -33,7 +48,6 @@ export default function SettingsPage() {
   const [editFullName, setEditFullName] = useState('');
   const [editFullNameTA, setEditFullNameTA] = useState('');
   const [editRole, setEditRole] = useState('member');
-  const [editPassword, setEditPassword] = useState('');
   const [changePwCurrent, setChangePwCurrent] = useState('');
   const [changePwNew, setChangePwNew] = useState('');
   const [changePwConfirm, setChangePwConfirm] = useState('');
@@ -44,11 +58,40 @@ export default function SettingsPage() {
   const totalAllYearsLoans = years.reduce((s, y) => s + getYearSummary(allYearsData[y]).totalLoans, 0);
 
   const handleCreateUser = async () => {
-    if (!newFullName.trim() || !newUsername.trim() || !newPassword.trim()) { setUserError(t(T.registerError, lang)); return; }
-    if (newPassword !== newConfirmPw) { setUserError(t(T.passwordMismatch, lang)); return; }
-    if (registeredUsers.some(u => u.username === newUsername.trim())) { setUserError(t(T.userExists, lang)); return; }
+    let safeUsername;
+    let safeFullName;
+    let safeFullNameTA;
+    let safeRole;
+    let safePassword;
+
     try {
-      await onRegister({ username: newUsername.trim(), password: newPassword, fullName: newFullName.trim(), fullNameTA: newFullNameTA.trim(), role: newRole });
+      safeUsername = assertValidUsername(newUsername);
+      safeFullName = assertValidPersonName(newFullName, 'Full name');
+      safeFullNameTA = assertValidPersonName(newFullNameTA, 'Full name (Tamil)', { optional: true });
+      safeRole = assertValidUserRole(newRole);
+      safePassword = assertStrongPassword(newPassword);
+    } catch (err) {
+      setUserError(err.message || t(T.registerError, lang));
+      return;
+    }
+
+    if (safePassword !== newConfirmPw) {
+      setUserError(t(T.passwordMismatch, lang));
+      return;
+    }
+    if (registeredUsers.some(u => u.username.toLowerCase() === safeUsername)) {
+      setUserError(t(T.userExists, lang));
+      return;
+    }
+
+    try {
+      await onRegister({
+        username: safeUsername,
+        password: safePassword,
+        fullName: safeFullName,
+        fullNameTA: safeFullNameTA,
+        role: safeRole,
+      });
       setNewFullName(''); setNewFullNameTA(''); setNewUsername(''); setNewPassword(''); setNewConfirmPw(''); setNewRole('member'); setUserError('');
       setShowCreateUser(false);
       toast({ title: t(T.userCreated, lang), variant: 'success' });
@@ -57,43 +100,91 @@ export default function SettingsPage() {
     }
   };
 
-  const startEditUser = (u) => { setEditingUser(u.username); setEditFullName(u.fullName); setEditFullNameTA(u.fullNameTA || ''); setEditRole(u.role); setEditPassword(''); };
+  const startEditUser = (u) => {
+    setEditingUser(u.username);
+    setEditFullName(u.fullName);
+    setEditFullNameTA(u.fullNameTA || '');
+    setEditRole(u.role);
+  };
 
   const handleSaveEditUser = async () => {
-    if (!editFullName.trim()) return;
-    const updates = { fullName: editFullName.trim(), fullNameTA: editFullNameTA.trim(), role: editRole };
-    if (editPassword.trim()) updates.password = editPassword.trim();
+    let safeFullName;
+    let safeFullNameTA;
+    let safeRole;
+
+    try {
+      safeFullName = assertValidPersonName(editFullName, 'Full name');
+      safeFullNameTA = assertValidPersonName(editFullNameTA, 'Full name (Tamil)', { optional: true });
+      safeRole = assertValidUserRole(editRole);
+    } catch (err) {
+      toast({ title: err.message || 'Invalid user data', variant: 'destructive' });
+      return;
+    }
+
+    const updates = { fullName: safeFullName, fullNameTA: safeFullNameTA, role: safeRole };
     try {
       await onUpdateUser(editingUser, updates);
       setEditingUser(null);
       toast({ title: t(T.userUpdated, lang), variant: 'success' });
     } catch (err) {
-      toast({ title: err.message || 'Update failed', variant: 'destructive' });
+      toast({
+        title: isPermissionDeniedError(err) ? 'Permission denied' : (err.message || 'Update failed'),
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleConfirmDeleteUser = async (username) => {
-    if (username === user.username) { toast({ title: t(T.cannotDeleteSelf, lang), variant: 'destructive' }); return; }
+  const handleUserStatusChange = async (username, nextStatus) => {
+    if (username === user.username && nextStatus === 'disabled') {
+      toast({ title: t(T.cannotDeleteSelf, lang), variant: 'destructive' });
+      return;
+    }
     try {
-      await onDeleteUser(username);
-      toast({ title: t(T.userDeleted, lang), variant: 'success' });
+      if (nextStatus === 'disabled') {
+        await onDeactivateUser(username);
+      } else {
+        await onReactivateUser(username);
+      }
+      toast({
+        title: nextStatus === 'disabled' ? 'User deactivated successfully' : 'User reactivated successfully',
+        variant: 'success',
+      });
     } catch (err) {
-      toast({ title: err.message || 'Delete failed', variant: 'destructive' });
+      toast({
+        title: isPermissionDeniedError(err) ? 'Permission denied' : (err.message || 'Status update failed'),
+        variant: 'destructive',
+      });
     }
   };
 
   const handleChangePassword = async () => {
-    if (!changePwNew.trim() || !changePwCurrent.trim()) { setChangePwError(t(T.registerError, lang)); return; }
-    if (changePwNew !== changePwConfirm) { setChangePwError(t(T.passwordMismatch, lang)); return; }
+    if (!changePwNew.trim() || !changePwCurrent.trim()) {
+      setChangePwError(t(T.registerError, lang));
+      return;
+    }
+
+    let safeNewPassword;
     try {
-      await onUpdateUser(user.username, { password: changePwNew });
+      safeNewPassword = assertStrongPassword(changePwNew);
+    } catch (err) {
+      setChangePwError(err.message || t(T.passwordChangeFailed, lang));
+      return;
+    }
+
+    if (safeNewPassword !== changePwConfirm) {
+      setChangePwError(t(T.passwordMismatch, lang));
+      return;
+    }
+
+    try {
+      await onChangeMyPassword(changePwCurrent, safeNewPassword);
       setChangePwCurrent('');
       setChangePwNew('');
       setChangePwConfirm('');
       setChangePwError('');
-      toast({ title: t(T.userUpdated, lang), variant: 'success' });
+      toast({ title: t(T.passwordChanged, lang), variant: 'success' });
     } catch (err) {
-      setChangePwError(err.message || 'Update failed');
+      setChangePwError(err.message || t(T.passwordChangeFailed, lang));
     }
   };
 
@@ -164,7 +255,6 @@ export default function SettingsPage() {
                               </button>
                             </div>
                           </div>
-                          <FormInput label={t(T.newPassword, lang)} type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="••••••" icon={Lock} />
                         </div>
                         <div className="flex gap-2">
                           <Btn onClick={handleSaveEditUser} icon={Save} variant="success" size="xs">{t(T.updateUser, lang)}</Btn>
@@ -182,21 +272,37 @@ export default function SettingsPage() {
                           {u.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
                           {u.role === 'admin' ? t(T.admin, lang) : t(T.member, lang)}
                         </span>
+                        <span className={`inline-flex items-center gap-1 text-[9px] font-medium px-2 py-0.5 rounded-full shrink-0 ${u.status === 'disabled' ? 'bg-ruby/10 text-ruby' : 'bg-forest/10 text-forest'}`}>
+                          {u.status === 'disabled' ? 'Disabled' : 'Active'}
+                        </span>
                         <div className="flex items-center gap-1 shrink-0">
                           <Button variant="ghost" size="icon-sm" onClick={() => startEditUser(u)} title={t(T.editUser, lang)} className="text-smoke hover:text-brass"><Edit3 className="w-3 h-3" /></Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon-sm" title={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby"><Trash2 className="w-3 h-3" /></Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                title={u.status === 'disabled' ? 'Reactivate user' : 'Deactivate user'}
+                                className={`text-smoke ${u.status === 'disabled' ? 'hover:text-forest' : 'hover:text-ruby'}`}
+                                disabled={u.username === user.username && u.status !== 'disabled'}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>{t(T.confirmDeleteUser, lang)}</AlertDialogTitle>
-                                <AlertDialogDescription>{u.fullName} (@{u.username})</AlertDialogDescription>
+                                <AlertDialogTitle>{u.status === 'disabled' ? 'Reactivate this user?' : 'Deactivate this user?'}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {u.fullName} (@{u.username})
+                                </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>{t(T.cancel, lang)}</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleConfirmDeleteUser(u.username)} className="bg-ruby hover:bg-ruby/80">
-                                  <Trash2 className="w-3.5 h-3.5" /> {t(T.deleteUser, lang)}
+                                <AlertDialogAction
+                                  onClick={() => handleUserStatusChange(u.username, u.status === 'disabled' ? 'active' : 'disabled')}
+                                  className={u.status === 'disabled' ? 'bg-forest hover:bg-forest/80' : 'bg-ruby hover:bg-ruby/80'}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" /> {u.status === 'disabled' ? 'Reactivate' : 'Deactivate'}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -336,7 +442,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <PasswordInput label={t(T.currentPassword, lang)} value={changePwCurrent} onChange={e => { setChangePwCurrent(e.target.value); setChangePwError(''); }} placeholder={t(T.enterPassword, lang)} icon={Lock} />
             <div />
-            <PasswordInput label={t(T.newPassword, lang)} value={changePwNew} onChange={e => { setChangePwNew(e.target.value); setChangePwError(''); }} placeholder={t(T.enterPassword, lang)} icon={Key} />
+            <PasswordInput label={t(T.newPasswordLabel, lang)} value={changePwNew} onChange={e => { setChangePwNew(e.target.value); setChangePwError(''); }} placeholder={t(T.enterNewPassword, lang)} icon={Key} />
             <PasswordInput label={t(T.confirmPassword, lang)} value={changePwConfirm} onChange={e => { setChangePwConfirm(e.target.value); setChangePwError(''); }} placeholder={t(T.enterConfirmPassword, lang)} />
           </div>
           <div className="flex gap-2 pt-4">

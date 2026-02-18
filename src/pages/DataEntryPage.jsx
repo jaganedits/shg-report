@@ -2,16 +2,20 @@ import { useState } from 'react';
 import { Calendar, Plus, Save, X, PenLine, Check, AlertTriangle, LayoutGrid, Table2 } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency, cn } from '@/lib/utils';
 import useViewMode from '@/lib/useViewMode';
 import { INTEREST_RATE } from '@/data/sampleData';
+import { toast } from '@/hooks/use-toast';
+import { assertMemberRecord, assertValidYear } from '@/lib/validators';
 import { SectionHeader, ECard, ECardHeader, FormInput, Btn, NumInput, TH, TD, PageSkeleton, Pagination } from '@/components/shared';
 
 const PAGE_SIZE = 10;
 
 export default function DataEntryPage() {
   const lang = useLang();
+  const { isAdmin } = useAuth();
   const { currentData: data, members, selectedYear: year, years, updateMonthData, addNewYear, groupClosed } = useData();
   const [selMonth, setSelMonth] = useState(0);
   const [editData, setEditData] = useState(null);
@@ -44,10 +48,23 @@ export default function DataEntryPage() {
       });
     });
   };
-  const saveData = () => { updateMonthData(year, selMonth, editData); setEditData(null); setSaved(true); setTimeout(() => setSaved(false), 2500); };
+  const saveData = () => {
+    if (!isAdmin || groupClosed || !editData) return;
+    try {
+      const safeYear = assertValidYear(year);
+      const safeMembers = editData.map(assertMemberRecord);
+      updateMonthData(safeYear, selMonth, safeMembers);
+      setEditData(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      toast({ title: err.message || 'Invalid data', variant: 'destructive', duration: 4000 });
+    }
+  };
 
   // Dialog edit (for card view - single member)
   const openEditDialog = (memIdx) => {
+    if (!isAdmin || groupClosed) return;
     const mem = md.members[memIdx];
     setDialogIdx(memIdx);
     setDialogFields({ saving: mem.saving, loanTaken: mem.loanTaken, loanRepayment: mem.loanRepayment });
@@ -56,6 +73,7 @@ export default function DataEntryPage() {
     setDialogFields(prev => ({ ...prev, [field]: Math.max(0, Number(val) || 0) }));
   };
   const saveDialog = () => {
+    if (!isAdmin || groupClosed) return;
     const updatedMembers = md.members.map((m, i) => {
       if (i !== dialogIdx) return m;
       const merged = { ...m, ...dialogFields };
@@ -67,15 +85,31 @@ export default function DataEntryPage() {
       const balance = (merged.loanTaken || 0) + oldLoan - (merged.loanRepayment || 0);
       return { ...merged, cumulative: prevCumulative + (merged.saving || 0), oldLoan, oldInterest, currentInterest, balance, interest: currentInterest, loanBalance: balance };
     });
-    updateMonthData(year, selMonth, updatedMembers);
-    setDialogIdx(null);
-    setDialogFields(null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    try {
+      const safeYear = assertValidYear(year);
+      const safeMembers = updatedMembers.map(assertMemberRecord);
+      updateMonthData(safeYear, selMonth, safeMembers);
+      setDialogIdx(null);
+      setDialogFields(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      toast({ title: err.message || 'Invalid data', variant: 'destructive', duration: 4000 });
+    }
   };
   const closeDialog = () => { setDialogIdx(null); setDialogFields(null); };
 
-  const handleAddYear = () => { const y = parseInt(newYear); if (y && y > 1900 && y < 2100 && !years.includes(y)) { addNewYear(y); setNewYear(''); } };
+  const handleAddYear = () => {
+    try {
+      const y = assertValidYear(parseInt(newYear, 10));
+      if (!years.includes(y)) {
+        addNewYear(y);
+        setNewYear('');
+      }
+    } catch (err) {
+      toast({ title: err.message || 'Invalid year', variant: 'destructive', duration: 4000 });
+    }
+  };
   const currentMembers = editData || md.members;
   const totalPages = Math.ceil(currentMembers.length / PAGE_SIZE);
   const safePage = Math.min(page, Math.max(1, totalPages));
@@ -106,9 +140,14 @@ export default function DataEntryPage() {
           <AlertTriangle className="w-4 h-4 shrink-0" />{t(T.groupClosedMsg, lang)}
         </div>
       )}
+      {!isAdmin && (
+        <div className="bg-brass/8 text-brass-dark border border-brass/25 rounded-xl px-4 py-3 text-xs flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />Only admins can edit monthly data.
+        </div>
+      )}
       <div className="animate-fade-up delay-1 flex items-end gap-2 md:gap-3 flex-wrap">
         <FormInput label={t(T.addNewYear, lang)} type="number" value={newYear} onChange={e => setNewYear(e.target.value)} placeholder="e.g. 2025" icon={Calendar} className="w-32 md:w-40" />
-        <Btn onClick={handleAddYear} icon={Plus} variant="secondary" size="md" disabled={!newYear || groupClosed}>{t(T.addYear, lang)}</Btn>
+        <Btn onClick={handleAddYear} icon={Plus} variant="secondary" size="md" disabled={!newYear || groupClosed || !isAdmin}>{t(T.addYear, lang)}</Btn>
         <div className="flex gap-1 flex-wrap ml-auto">
           {years.map(y => <span key={y} className={`font-display text-[11px] font-bold px-2.5 py-1 rounded-lg ${y === year ? 'text-cream bg-terracotta-deep' : 'text-terracotta-deep bg-terracotta/8'}`}>{y}</span>)}
         </div>
@@ -137,7 +176,7 @@ export default function DataEntryPage() {
                 </button>
               </div>
               {/* Table view: bulk edit button */}
-              {viewMode === 'table' && !groupClosed && (editData
+              {viewMode === 'table' && isAdmin && !groupClosed && (editData
                 ? <div className="flex gap-1.5">
                     <Btn onClick={saveData} icon={Save} variant="success" size="xs"><span className="hidden sm:inline">{t(T.save, lang)}</span></Btn>
                     <Btn onClick={() => setEditData(null)} icon={X} variant="ghost" size="xs"><span className="hidden sm:inline">{t(T.cancel, lang)}</span></Btn>
@@ -159,7 +198,7 @@ export default function DataEntryPage() {
                 <div key={realIdx} className="bg-ivory rounded-xl border border-sand/60 p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-display font-bold text-charcoal text-sm">#{mem.memberId} {displayName}</span>
-                    {!groupClosed && (
+                    {isAdmin && !groupClosed && (
                       <button onClick={() => openEditDialog(realIdx)}
                         className="p-1.5 rounded-lg text-smoke hover:text-terracotta-deep hover:bg-terracotta/10 transition-colors">
                         <PenLine className="w-3.5 h-3.5" />

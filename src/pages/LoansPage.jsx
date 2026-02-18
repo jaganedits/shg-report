@@ -3,7 +3,7 @@ import { CreditCard, IndianRupee, FileSpreadsheet, TrendingUp, LayoutGrid, Table
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import useViewMode from '@/lib/useViewMode';
 import { MetricCard, SectionHeader, ECard, ECardHeader, TH, TD, Btn, PageSkeleton, Pagination } from '@/components/shared';
 

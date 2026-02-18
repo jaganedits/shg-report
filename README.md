@@ -1,16 +1,42 @@
-# React + Vite
+# SHG Report App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Single-page React app for SHG (Self Help Group) savings/loan tracking with Firebase Auth + Firestore.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 20+
+- npm 10+
+- Firebase project with Firestore + Email/Password auth enabled
+- Firebase CLI (for rules deploy): `npm i -g firebase-tools`
 
-## React Compiler
+## Environment
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Create `.env.local` from `.env.example` and fill all `VITE_FIREBASE_*` values.
 
-## Expanding the ESLint configuration
+### Production behavior
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Firebase config is mandatory.
+- App login is blocked if Firebase env variables are missing.
+
+### Development behavior
+
+- If Firebase env is missing, app uses a local fallback auth mode.
+- Fallback mode is for local development only.
+
+## Commands
+
+- `npm run dev` - start dev server
+- `npm run build` - production build
+- `npm run lint` - eslint checks
+- `npm run preview` - preview build locally
+- `npm run deploy:rules` - deploy Firestore rules from `firestore.rules`
+
+## Firestore Security Rules
+
+- Rules are in `firestore.rules`.
+- Firebase config file is `firebase.json`.
+- Deploy rules:
+
+```bash
+npm run deploy:rules
+```

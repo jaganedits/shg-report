@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogIn, LogOut, PenLine, UserPlus, UserMinus, Edit3, Trash2, Calendar, Lock, Unlock, Activity, ChevronDown, ChevronUp, Wallet, CreditCard, ArrowDownRight } from 'lucide-react';
+import { LogIn, LogOut, PenLine, UserPlus, UserMinus, Edit3, Trash2, Calendar, Lock, Unlock, Key, Activity, ChevronDown, ChevronUp, Wallet, CreditCard, ArrowDownRight } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { isFirebaseConfigured } from '@/services/firebase/config';
 import * as firestore from '@/services/firebase/firestore';
@@ -16,6 +16,9 @@ const ACTIVITY_CONFIG = {
   user_create:  { icon: UserPlus,  color: 'text-forest',     bg: 'bg-forest/10',     key: 'actUserCreate' },
   user_update:  { icon: Edit3,     color: 'text-brass',      bg: 'bg-brass/10',      key: 'actUserUpdate' },
   user_delete:  { icon: Trash2,    color: 'text-ruby',       bg: 'bg-ruby/10',       key: 'actUserDelete' },
+  user_deactivate:{ icon: Lock,    color: 'text-ruby',       bg: 'bg-ruby/10',       key: 'actUserDeactivate' },
+  user_reactivate:{ icon: Unlock,  color: 'text-forest',     bg: 'bg-forest/10',     key: 'actUserReactivate' },
+  password_change:{ icon: Key,     color: 'text-brass',      bg: 'bg-brass/10',      key: 'actPasswordChange' },
   year_add:     { icon: Calendar,  color: 'text-terracotta', bg: 'bg-terracotta/10', key: 'actYearAdd' },
   group_close:  { icon: Lock,      color: 'text-ruby',       bg: 'bg-ruby/10',       key: 'actGroupClose' },
   group_reopen: { icon: Unlock,    color: 'text-forest',     bg: 'bg-forest/10',     key: 'actGroupReopen' },
@@ -86,10 +89,10 @@ function ChangedMembersList({ changedMembers, lang }) {
 export default function RecentActivity({ count = 15 }) {
   const lang = useLang();
   const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isFirebaseConfigured);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) { setLoading(false); return; }
+    if (!isFirebaseConfigured) return undefined;
     const unsub = firestore.onActivityChange(count, (data) => {
       setActivities(data);
       setLoading(false);

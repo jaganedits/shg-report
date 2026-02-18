@@ -16,14 +16,12 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const lang = useLang();
   const { setLang } = useLangContext();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, canUseLocalAuthFallback, configurationError } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loaded, setLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { setLoaded(true); }, []);
   useEffect(() => {
     if (isAuthenticated) navigate('/overview', { replace: true });
   }, [isAuthenticated, navigate]);
@@ -34,9 +32,9 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const result = await login(username, password);
-      if (result?.error) { setError(t(T.loginError, lang)); setSubmitting(false); return; }
+      if (result?.error) { setError(result.error || t(T.loginError, lang)); setSubmitting(false); return; }
       if (!result?.success) navigate('/overview');
-    } catch (err) {
+    } catch {
       setError(t(T.loginError, lang));
       setSubmitting(false);
     }
@@ -52,7 +50,7 @@ export default function LoginPage() {
         <LangToggle lang={lang} setLang={setLang} variant="light" />
       </div>
 
-      <div className={`w-full max-w-sm relative ${loaded ? 'animate-scale-in' : 'opacity-0'}`}>
+      <div className="w-full max-w-sm relative animate-scale-in">
         <div className="text-center mb-5">
           <KolamPattern className="w-28 text-brass mx-auto mb-3" />
           <h1 className={`font-display text-xl font-bold text-charcoal leading-snug ${lang === 'ta' ? 'font-tamil' : ''}`}>
@@ -68,6 +66,20 @@ export default function LoginPage() {
         <div className="bg-ivory border border-sand rounded-xl p-5 relative overflow-hidden">
           <CornerOrnament position="top-left" />
           <CornerOrnament position="bottom-right" />
+
+          {configurationError && (
+            <div className="bg-ruby/8 text-ruby border border-ruby/20 rounded-lg px-3 py-2 text-[11px] flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              {configurationError}
+            </div>
+          )}
+
+          {canUseLocalAuthFallback && (
+            <div className="bg-brass/8 text-brass-dark border border-brass/25 rounded-lg px-3 py-2 text-[11px] flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              DEV MODE: Firebase is not configured, using local fallback auth.
+            </div>
+          )}
 
           <div className="flex items-center gap-2 mb-4">
             <div className="p-1.5 rounded-lg bg-terracotta/8">
@@ -95,7 +107,11 @@ export default function LoginPage() {
               </div>
             )}
 
-            <Button type="submit" disabled={submitting} className="w-full py-2.5 shadow-lg shadow-terracotta/20 hover:shadow-terracotta/30 hover:-translate-y-0.5 active:translate-y-0">
+            <Button
+              type="submit"
+              disabled={submitting || (!!configurationError && !canUseLocalAuthFallback)}
+              className="w-full py-2.5 shadow-lg shadow-terracotta/20 hover:shadow-terracotta/30 hover:-translate-y-0.5 active:translate-y-0"
+            >
               <LogIn className="w-4 h-4" /> {submitting ? '...' : t(T.login, lang)}
             </Button>
 

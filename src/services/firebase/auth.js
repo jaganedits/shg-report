@@ -4,7 +4,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile,
-  getAuth
+  getAuth,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
 } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { auth, isFirebaseConfigured, firebaseConfig } from './config';
@@ -37,6 +40,21 @@ export const signUp = async (email, password, displayName) => {
 export const signOut = async () => {
   if (!isFirebaseConfigured) throw new Error('Firebase not configured');
   return firebaseSignOut(auth);
+};
+
+export const reauthenticateCurrentUser = async (currentPassword) => {
+  if (!isFirebaseConfigured) throw new Error('Firebase not configured');
+  if (!auth.currentUser?.email) throw new Error('No authenticated user found');
+
+  const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+  return reauthenticateWithCredential(auth.currentUser, credential);
+};
+
+export const changeCurrentUserPassword = async (currentPassword, newPassword) => {
+  if (!isFirebaseConfigured) throw new Error('Firebase not configured');
+  await reauthenticateCurrentUser(currentPassword);
+  if (!auth.currentUser) throw new Error('No authenticated user found');
+  return updatePassword(auth.currentUser, newPassword);
 };
 
 export const onAuthChange = (callback) => {
