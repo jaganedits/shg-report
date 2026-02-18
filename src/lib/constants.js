@@ -3,9 +3,9 @@ import { Sparkles, Calendar, Users, CreditCard, ClipboardList, BarChart2, Settin
 export const PAGE_SIZE = 10;
 
 export const PALETTE = [
-  '#A0522D', '#C69749', '#2E7D5B', '#9B2335', '#6B3410',
-  '#D4845A', '#8B6914', '#2D5E42', '#4A4543', '#C4956C',
-  '#E8C97A', '#1A3A2A', '#8A8380', '#D4C5B2',
+  '#A0522D', '#C69749', '#2E7D5B', '#9B2335', '#D4845A',
+  '#E8C97A', '#5B9E8F', '#D47B6A', '#8B6914', '#7BA383',
+  '#C4956C', '#CC7B8A', '#6AADBA', '#B89E5A',
 ];
 
 export const NAV_ITEMS = [
