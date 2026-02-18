@@ -274,7 +274,7 @@ export default function MembersPage() {
                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" strokeWidth={2} stroke="#FDF6EC" label={false}>
                   {pieData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: '#2D2926', color: '#FDF6EC', border: 'none', borderRadius: 12, fontSize: 12 }} />
+                <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: '#2D2926', color: '#FDF6EC', border: 'none', borderRadius: 12, fontSize: 12 }} labelStyle={{ color: '#FDF6EC' }} itemStyle={{ color: '#FDF6EC' }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2 px-1">
