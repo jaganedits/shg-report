@@ -15,9 +15,13 @@ const firebaseConfig = {
 
 const isProduction = Boolean(env.PROD);
 const allowLocalAuthFallback = !isProduction;
-const isFirebaseConfigured = Object.values(firebaseConfig).every(value => typeof value === 'string' && value.trim() !== '');
+const requiredFirebaseKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+const isFirebaseConfigured = requiredFirebaseKeys.every((key) => {
+  const value = firebaseConfig[key];
+  return typeof value === 'string' && value.trim() !== '';
+});
 const firebaseConfigError = isProduction && !isFirebaseConfigured
-  ? 'Firebase is not configured for production. Please set all VITE_FIREBASE_* variables.'
+  ? 'Firebase is not configured for production. Please set required VITE_FIREBASE_* variables.'
   : '';
 
 let app, auth, db;
