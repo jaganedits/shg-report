@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Users, TrendingUp, Shield, User, UserPlus, Edit3, Trash2, Save, X, Lock, Key, Check, AlertTriangle, ArrowRight, Calendar, Plus, Download, FileSpreadsheet } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ import {
   assertValidUsername,
   isPermissionDeniedError,
 } from '@/lib/validators';
+import { transliterateToTamil } from '@/lib/transliterate';
 
 export default function SettingsPage() {
   const lang = useLang();
@@ -53,6 +54,8 @@ export default function SettingsPage() {
   const [changePwNew, setChangePwNew] = useState('');
   const [changePwConfirm, setChangePwConfirm] = useState('');
   const [changePwError, setChangePwError] = useState('');
+  const newTamilTouched = useRef(false);
+  const editTamilTouched = useRef(false);
 
   const years = Object.keys(allYearsData).map(Number).sort();
   const totalAllYearsSavings = years.reduce((s, y) => s + getYearSummary(allYearsData[y]).totalSavings, 0);
@@ -193,7 +196,7 @@ export default function SettingsPage() {
         role: safeRole,
       });
       setNewFullName(''); setNewFullNameTA(''); setNewUsername(''); setNewPassword(''); setNewConfirmPw(''); setNewRole('member'); setUserError('');
-      setShowCreateUser(false);
+      setShowCreateUser(false); newTamilTouched.current = false;
       toast({ title: t(T.userCreated, lang), variant: 'success' });
     } catch (err) {
       setUserError(err.message || t(T.registerError, lang));
@@ -205,6 +208,7 @@ export default function SettingsPage() {
     setEditFullName(u.fullName);
     setEditFullNameTA(u.fullNameTA || '');
     setEditRole(u.role);
+    editTamilTouched.current = Boolean(u.fullNameTA);
   };
 
   const handleSaveEditUser = async () => {
@@ -306,8 +310,8 @@ export default function SettingsPage() {
               <div className="bg-cream-dark/20 border border-sand/60 rounded-xl p-4 mb-4 space-y-3">
                 <div className="flex items-center gap-2 mb-1"><UserPlus className="w-4 h-4 text-terracotta" /><h4 className="font-display text-sm font-semibold">{t(T.createUser, lang)}</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <FormInput label={t(T.fullName, lang)} value={newFullName} onChange={e => { setNewFullName(e.target.value); setUserError(''); }} placeholder={t(T.enterFullName, lang)} icon={User} />
-                  <FormInput label={t(T.fullNameTA, lang)} value={newFullNameTA} onChange={e => setNewFullNameTA(e.target.value)} placeholder={t(T.enterFullNameTA, lang)} />
+                  <FormInput label={t(T.fullName, lang)} value={newFullName} onChange={e => { setNewFullName(e.target.value); setUserError(''); if (!newTamilTouched.current) setNewFullNameTA(transliterateToTamil(e.target.value)); }} placeholder={t(T.enterFullName, lang)} icon={User} />
+                  <FormInput label={t(T.fullNameTA, lang)} value={newFullNameTA} onChange={e => { newTamilTouched.current = true; setNewFullNameTA(e.target.value); }} placeholder={t(T.enterFullNameTA, lang)} />
                   <FormInput label={t(T.username, lang)} value={newUsername} onChange={e => { setNewUsername(e.target.value); setUserError(''); }} placeholder={t(T.enterUsername, lang)} icon={Users} />
                   <div>
                     <label className="block text-[10px] font-semibold text-smoke uppercase tracking-wider mb-1">{t(T.role, lang)}</label>
@@ -340,8 +344,8 @@ export default function SettingsPage() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 mb-1"><Edit3 className="w-3.5 h-3.5 text-brass" /><span className="text-xs font-semibold text-charcoal">{t(T.editUser, lang)}: @{u.username}</span></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          <FormInput label={t(T.fullName, lang)} value={editFullName} onChange={e => setEditFullName(e.target.value)} placeholder={t(T.enterFullName, lang)} icon={User} />
-                          <FormInput label={t(T.fullNameTA, lang)} value={editFullNameTA} onChange={e => setEditFullNameTA(e.target.value)} placeholder={t(T.enterFullNameTA, lang)} />
+                          <FormInput label={t(T.fullName, lang)} value={editFullName} onChange={e => { setEditFullName(e.target.value); if (!editTamilTouched.current) setEditFullNameTA(transliterateToTamil(e.target.value)); }} placeholder={t(T.enterFullName, lang)} icon={User} />
+                          <FormInput label={t(T.fullNameTA, lang)} value={editFullNameTA} onChange={e => { editTamilTouched.current = true; setEditFullNameTA(e.target.value); }} placeholder={t(T.enterFullNameTA, lang)} />
                           <div>
                             <label className="block text-[10px] font-semibold text-smoke uppercase tracking-wider mb-1">{t(T.role, lang)}</label>
                             <div className="flex gap-2">

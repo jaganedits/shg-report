@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2, Save, SearchX } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
@@ -8,6 +8,7 @@ import T, { t } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import useViewMode from '@/lib/useViewMode';
 import { PALETTE, PAGE_SIZE } from '@/lib/constants';
+import { transliterateToTamil } from '@/lib/transliterate';
 import { SectionHeader, ECard, ECardHeader, FormInput, Btn, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +30,9 @@ export default function MembersPage() {
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
   const [viewMode, setViewMode] = useViewMode('members');
+  const addTamilTouched = useRef(false);
+  const editTamilTouched = useRef(false);
+  const dialogTamilTouched = useRef(false);
 
   if (!data) return <PageSkeleton type="members" />;
 
@@ -75,11 +79,11 @@ export default function MembersPage() {
   const safePage = Math.min(page, Math.max(1, totalPages));
   const pagedSummaries = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const handleAdd = () => { if (!newName.trim()) return; onAdd(newName.trim(), newNameTA.trim()); setNewName(''); setNewNameTA(''); setShowAddForm(false); };
+  const handleAdd = () => { if (!newName.trim()) return; onAdd(newName.trim(), newNameTA.trim()); setNewName(''); setNewNameTA(''); setShowAddForm(false); addTamilTouched.current = false; };
   const handleEdit = (id) => { if (!editName.trim()) return; onEdit(id, editName.trim(), editNameTA.trim()); setEditingId(null); };
-  const startEdit = (m) => { setEditingId(m.id); setEditName(m.name); setEditNameTA(m.nameTA || ''); };
-  const openDialog = (m) => { setDialogMember(m); setDialogName(m.name); setDialogNameTA(m.nameTA || ''); };
-  const closeDialog = () => { setDialogMember(null); setDialogName(''); setDialogNameTA(''); };
+  const startEdit = (m) => { setEditingId(m.id); setEditName(m.name); setEditNameTA(m.nameTA || ''); editTamilTouched.current = Boolean(m.nameTA); };
+  const openDialog = (m) => { setDialogMember(m); setDialogName(m.name); setDialogNameTA(m.nameTA || ''); dialogTamilTouched.current = Boolean(m.nameTA); };
+  const closeDialog = () => { setDialogMember(null); setDialogName(''); setDialogNameTA(''); dialogTamilTouched.current = false; };
   const saveDialog = () => { if (!dialogName.trim() || !dialogMember) return; onEdit(dialogMember.id, dialogName.trim(), dialogNameTA.trim()); closeDialog(); };
 
   return (
@@ -93,11 +97,11 @@ export default function MembersPage() {
             <ECard delay={1}><div className="p-4">
               <div className="flex items-center gap-2 mb-3"><UserPlus className="w-4 h-4 text-terracotta" /><h3 className="font-display text-sm font-semibold">{t(T.addNewMember, lang)}</h3></div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <FormInput label={t(T.nameEnglish, lang)} value={newName} onChange={e => setNewName(e.target.value)} placeholder={t(T.enterMemberName, lang)} icon={Users} />
-                <FormInput label={t(T.nameTamil, lang)} value={newNameTA} onChange={e => setNewNameTA(e.target.value)} placeholder={t(T.enterTamilName, lang)} />
+                <FormInput label={t(T.nameEnglish, lang)} value={newName} onChange={e => { setNewName(e.target.value); if (!addTamilTouched.current) setNewNameTA(transliterateToTamil(e.target.value)); }} placeholder={t(T.enterMemberName, lang)} icon={Users} />
+                <FormInput label={t(T.nameTamil, lang)} value={newNameTA} onChange={e => { addTamilTouched.current = true; setNewNameTA(e.target.value); }} placeholder={t(T.enterTamilName, lang)} />
                 <div className="flex items-end gap-2">
                   <Btn onClick={handleAdd} icon={Plus} variant="primary" size="md" disabled={!newName.trim()}>{t(T.add, lang)}</Btn>
-                  <Btn onClick={() => { setShowAddForm(false); setNewName(''); setNewNameTA(''); }} icon={X} variant="ghost" size="md">{t(T.cancel, lang)}</Btn>
+                  <Btn onClick={() => { setShowAddForm(false); setNewName(''); setNewNameTA(''); addTamilTouched.current = false; }} icon={X} variant="ghost" size="md">{t(T.cancel, lang)}</Btn>
                 </div>
               </div>
             </div></ECard>
@@ -231,8 +235,8 @@ export default function MembersPage() {
                         <TD align="left">
                           {editingId === m.id ? (
                             <div className="flex items-center gap-1">
-                              <input value={editName} onChange={e => setEditName(e.target.value)} aria-label={t(T.nameEnglish, lang)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-brass/40" />
-                              <input value={editNameTA} onChange={e => setEditNameTA(e.target.value)} aria-label={t(T.nameTamil, lang)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 font-tamil focus:outline-none focus:ring-1 focus:ring-brass/40" placeholder="Tamil" />
+                              <input value={editName} onChange={e => { setEditName(e.target.value); if (!editTamilTouched.current) setEditNameTA(transliterateToTamil(e.target.value)); }} aria-label={t(T.nameEnglish, lang)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-brass/40" />
+                              <input value={editNameTA} onChange={e => { editTamilTouched.current = true; setEditNameTA(e.target.value); }} aria-label={t(T.nameTamil, lang)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 font-tamil focus:outline-none focus:ring-1 focus:ring-brass/40" placeholder="Tamil" />
                               <button onClick={() => handleEdit(m.id)} aria-label={t(T.save, lang)} className="text-forest hover:text-forest-light p-1.5"><Check className="w-3.5 h-3.5" /></button>
                               <button onClick={() => setEditingId(null)} aria-label={t(T.cancel, lang)} className="text-smoke hover:text-ruby p-1.5"><X className="w-3.5 h-3.5" /></button>
                             </div>
@@ -311,7 +315,7 @@ export default function MembersPage() {
                 <label className="block text-[10px] font-semibold text-smoke mb-1">{t(T.nameEnglish, lang)}</label>
                 <input
                   value={dialogName}
-                  onChange={e => setDialogName(e.target.value)}
+                  onChange={e => { setDialogName(e.target.value); if (!dialogTamilTouched.current) setDialogNameTA(transliterateToTamil(e.target.value)); }}
                   className="w-full bg-cream-dark/40 border border-sand/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta/30"
                   autoFocus
                 />
@@ -320,7 +324,7 @@ export default function MembersPage() {
                 <label className="block text-[10px] font-semibold text-smoke mb-1">{t(T.nameTamil, lang)}</label>
                 <input
                   value={dialogNameTA}
-                  onChange={e => setDialogNameTA(e.target.value)}
+                  onChange={e => { dialogTamilTouched.current = true; setDialogNameTA(e.target.value); }}
                   className="w-full bg-cream-dark/40 border border-sand/50 rounded-lg px-3 py-2 text-sm font-tamil focus:outline-none focus:ring-2 focus:ring-terracotta/30"
                   placeholder={t(T.enterTamilName, lang)}
                 />
