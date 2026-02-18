@@ -1,5 +1,7 @@
 import { Sparkles, Calendar, Users, CreditCard, ClipboardList, BarChart2, Settings } from 'lucide-react';
 
+export const PAGE_SIZE = 10;
+
 export const PALETTE = [
   '#A0522D', '#C69749', '#2E7D5B', '#9B2335', '#6B3410',
   '#D4845A', '#8B6914', '#2D5E42', '#4A4543', '#C4956C',

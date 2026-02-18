@@ -58,6 +58,11 @@ export default function SettingsPage() {
   const totalAllYearsLoans = years.reduce((s, y) => s + getYearSummary(allYearsData[y]).totalLoans, 0);
 
   const handleCreateUser = async () => {
+    if (newPassword !== newConfirmPw) {
+      setUserError(t(T.passwordMismatch, lang));
+      return;
+    }
+
     let safeUsername;
     let safeFullName;
     let safeFullNameTA;
@@ -72,11 +77,6 @@ export default function SettingsPage() {
       safePassword = assertStrongPassword(newPassword);
     } catch (err) {
       setUserError(err.message || t(T.registerError, lang));
-      return;
-    }
-
-    if (safePassword !== newConfirmPw) {
-      setUserError(t(T.passwordMismatch, lang));
       return;
     }
     if (registeredUsers.some(u => u.username.toLowerCase() === safeUsername)) {
@@ -163,16 +163,16 @@ export default function SettingsPage() {
       return;
     }
 
+    if (changePwNew !== changePwConfirm) {
+      setChangePwError(t(T.passwordMismatch, lang));
+      return;
+    }
+
     let safeNewPassword;
     try {
       safeNewPassword = assertStrongPassword(changePwNew);
     } catch (err) {
       setChangePwError(err.message || t(T.passwordChangeFailed, lang));
-      return;
-    }
-
-    if (safeNewPassword !== changePwConfirm) {
-      setChangePwError(t(T.passwordMismatch, lang));
       return;
     }
 

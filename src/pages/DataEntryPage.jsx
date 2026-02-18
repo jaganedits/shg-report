@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Plus, Save, X, PenLine, Check, AlertTriangle, LayoutGrid, Table2 } from 'lucide-react';
+import { Calendar, Plus, Save, X, PenLine, Check, AlertTriangle, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,9 +9,9 @@ import useViewMode from '@/lib/useViewMode';
 import { INTEREST_RATE } from '@/data/sampleData';
 import { toast } from '@/hooks/use-toast';
 import { assertMemberRecord, assertValidYear } from '@/lib/validators';
-import { SectionHeader, ECard, ECardHeader, FormInput, Btn, NumInput, TH, TD, PageSkeleton, Pagination } from '@/components/shared';
-
-const PAGE_SIZE = 10;
+import { PAGE_SIZE } from '@/lib/constants';
+import { SectionHeader, ECard, ECardHeader, FormInput, Btn, NumInput, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
+import { Button } from '@/components/ui/button';
 
 export default function DataEntryPage() {
   const lang = useLang();
@@ -23,6 +23,7 @@ export default function DataEntryPage() {
   const [newYear, setNewYear] = useState('');
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useViewMode('dataEntry');
+  const [isSaving, setIsSaving] = useState(false);
   // Dialog edit state for card view
   const [dialogIdx, setDialogIdx] = useState(null);
   const [dialogFields, setDialogFields] = useState(null);
@@ -48,17 +49,20 @@ export default function DataEntryPage() {
       });
     });
   };
-  const saveData = () => {
-    if (!isAdmin || groupClosed || !editData) return;
+  const saveData = async () => {
+    if (!isAdmin || groupClosed || !editData || isSaving) return;
     try {
+      setIsSaving(true);
       const safeYear = assertValidYear(year);
       const safeMembers = editData.map(assertMemberRecord);
-      updateMonthData(safeYear, selMonth, safeMembers);
+      await updateMonthData(safeYear, selMonth, safeMembers);
       setEditData(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       toast({ title: err.message || 'Invalid data', variant: 'destructive', duration: 4000 });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -72,8 +76,8 @@ export default function DataEntryPage() {
   const updateDialogField = (field, val) => {
     setDialogFields(prev => ({ ...prev, [field]: Math.max(0, Number(val) || 0) }));
   };
-  const saveDialog = () => {
-    if (!isAdmin || groupClosed) return;
+  const saveDialog = async () => {
+    if (!isAdmin || groupClosed || isSaving) return;
     const updatedMembers = md.members.map((m, i) => {
       if (i !== dialogIdx) return m;
       const merged = { ...m, ...dialogFields };
@@ -86,15 +90,18 @@ export default function DataEntryPage() {
       return { ...merged, cumulative: prevCumulative + (merged.saving || 0), oldLoan, oldInterest, currentInterest, balance, interest: currentInterest, loanBalance: balance };
     });
     try {
+      setIsSaving(true);
       const safeYear = assertValidYear(year);
       const safeMembers = updatedMembers.map(assertMemberRecord);
-      updateMonthData(safeYear, selMonth, safeMembers);
+      await updateMonthData(safeYear, selMonth, safeMembers);
       setDialogIdx(null);
       setDialogFields(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       toast({ title: err.message || 'Invalid data', variant: 'destructive', duration: 4000 });
+    } finally {
+      setIsSaving(false);
     }
   };
   const closeDialog = () => { setDialogIdx(null); setDialogFields(null); };
@@ -166,11 +173,11 @@ export default function DataEntryPage() {
           action={
             <div className="flex items-center gap-1">
               <div className="flex items-center gap-1 mr-1">
-                <button onClick={() => setViewMode('card')}
+                <button onClick={() => setViewMode('card')} aria-label={t(T.cardView, lang)}
                   className={cn('p-1.5 rounded-md transition-colors', viewMode === 'card' ? 'bg-terracotta-deep text-cream' : 'text-smoke hover:bg-sand/50')}>
                   <LayoutGrid className="w-4 h-4" />
                 </button>
-                <button onClick={() => setViewMode('table')}
+                <button onClick={() => setViewMode('table')} aria-label={t(T.tableView, lang)}
                   className={cn('p-1.5 rounded-md transition-colors', viewMode === 'table' ? 'bg-terracotta-deep text-cream' : 'text-smoke hover:bg-sand/50')}>
                   <Table2 className="w-4 h-4" />
                 </button>
@@ -178,8 +185,15 @@ export default function DataEntryPage() {
               {/* Table view: bulk edit button */}
               {viewMode === 'table' && isAdmin && !groupClosed && (editData
                 ? <div className="flex gap-1.5">
-                    <Btn onClick={saveData} icon={Save} variant="success" size="xs"><span className="hidden sm:inline">{t(T.save, lang)}</span></Btn>
-                    <Btn onClick={() => setEditData(null)} icon={X} variant="ghost" size="xs"><span className="hidden sm:inline">{t(T.cancel, lang)}</span></Btn>
+                    <ConfirmDialog
+                      trigger={<Button variant="success" size="sm" disabled={isSaving} className="bg-forest/10 text-forest hover:bg-forest/20 border border-forest/20 text-[10px] px-2 py-1">{isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}<span className="hidden sm:inline ml-1">{isSaving ? t(T.savingData, lang) : t(T.save, lang)}</span></Button>}
+                      title={t(T.confirmSaveTitle, lang)}
+                      description={t(T.confirmSaveDesc, lang)}
+                      confirmLabel={t(T.confirmSaveBtn, lang)}
+                      onConfirm={saveData}
+                      variant="warning"
+                    />
+                    <Btn onClick={() => setEditData(null)} icon={X} variant="ghost" size="xs" disabled={isSaving}><span className="hidden sm:inline">{t(T.cancel, lang)}</span></Btn>
                   </div>
                 : <Btn onClick={startEditing} icon={PenLine} variant="primary" size="xs"><span className="hidden sm:inline">{t(T.edit, lang)}</span></Btn>
               )}
@@ -199,8 +213,8 @@ export default function DataEntryPage() {
                   <div className="flex items-center justify-between">
                     <span className="font-display font-bold text-charcoal text-sm">#{mem.memberId} {displayName}</span>
                     {isAdmin && !groupClosed && (
-                      <button onClick={() => openEditDialog(realIdx)}
-                        className="p-1.5 rounded-lg text-smoke hover:text-terracotta-deep hover:bg-terracotta/10 transition-colors">
+                      <button onClick={() => openEditDialog(realIdx)} aria-label={t(T.edit, lang)}
+                        className="p-2.5 rounded-lg text-smoke hover:text-terracotta-deep hover:bg-terracotta/10 transition-colors">
                         <PenLine className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -343,7 +357,7 @@ export default function DataEntryPage() {
           <div className="relative bg-ivory rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[85vh] overflow-y-auto border border-sand shadow-xl animate-fade-up">
             <div className="sticky top-0 bg-ivory px-4 pt-4 pb-2 border-b border-sand/60 flex items-center justify-between z-10">
               <h3 className="font-display font-bold text-charcoal text-sm">#{dialogMem.memberId} {dialogDisplayName}</h3>
-              <button onClick={closeDialog} className="p-1.5 rounded-lg text-smoke hover:bg-sand/50"><X className="w-4 h-4" /></button>
+              <button onClick={closeDialog} aria-label={t(T.cancel, lang)} className="p-2.5 rounded-lg text-smoke hover:bg-sand/50"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-4 space-y-3">
               {/* Editable fields */}
@@ -387,8 +401,8 @@ export default function DataEntryPage() {
             </div>
             {/* Actions */}
             <div className="sticky bottom-0 bg-ivory px-4 py-3 border-t border-sand/60 flex gap-2">
-              <Btn onClick={saveDialog} icon={Save} variant="success" size="md" className="flex-1 justify-center">{t(T.save, lang)}</Btn>
-              <Btn onClick={closeDialog} icon={X} variant="ghost" size="md">{t(T.cancel, lang)}</Btn>
+              <Btn onClick={saveDialog} icon={isSaving ? Loader2 : Save} variant="success" size="md" className="flex-1 justify-center" disabled={isSaving}>{isSaving ? t(T.savingData, lang) : t(T.save, lang)}</Btn>
+              <Btn onClick={closeDialog} icon={X} variant="ghost" size="md" disabled={isSaving}>{t(T.cancel, lang)}</Btn>
             </div>
           </div>
         </div>

@@ -22,16 +22,23 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
     }
   }, []);
 
-  // Close on click outside
+  // Close on click outside or Escape key
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => {
+    const handleClick = (e) => {
       if (triggerRef.current?.contains(e.target)) return;
       if (dropdownRef.current?.contains(e.target)) return;
       setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') { setOpen(false); triggerRef.current?.focus(); }
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [open]);
 
   // Update position on open & scroll/resize
@@ -110,7 +117,7 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
               className="flex-1 bg-transparent text-xs text-charcoal placeholder:text-smoke/50 focus:outline-none"
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} className="text-smoke hover:text-charcoal">
+              <button type="button" onClick={() => setSearch('')} aria-label="Clear search" className="text-smoke hover:text-charcoal p-1">
                 <X className="w-3 h-3" />
               </button>
             )}

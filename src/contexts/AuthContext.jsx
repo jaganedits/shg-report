@@ -15,12 +15,27 @@ import {
   isPermissionDeniedError,
   normalizeUsername,
 } from '@/lib/validators';
+import T from '@/lib/i18n';
 
 const AuthContext = createContext(null);
 
+const mapFirebaseAuthError = (err, lang = 'en') => {
+  const code = String(err?.code || '');
+  if (code.includes('user-not-found') || code.includes('wrong-password') || code.includes('invalid-credential')) {
+    return T.authInvalidCredentials[lang] || T.authInvalidCredentials.en;
+  }
+  if (code.includes('too-many-requests')) {
+    return T.authTooManyRequests[lang] || T.authTooManyRequests.en;
+  }
+  if (code.includes('network-request-failed')) {
+    return T.authNetworkError[lang] || T.authNetworkError.en;
+  }
+  return T.authGenericError[lang] || T.authGenericError.en;
+};
+
 const toEmail = (username) => `${normalizeUsername(username)}@shreeannai-4d014.firebaseapp.com`;
 
-const DEV_LOCAL_USERS = [
+const DEV_LOCAL_USERS = import.meta.env.DEV ? [
   {
     uid: 'local-admin',
     username: 'admin',
@@ -30,7 +45,7 @@ const DEV_LOCAL_USERS = [
     role: 'admin',
     status: 'active',
   },
-];
+] : [];
 
 const toPublicUser = (value) => ({
   uid: value.uid || value.username,
@@ -155,7 +170,7 @@ export function AuthProvider({ children }) {
       return { success: true };
     } catch (err) {
       console.error('Login error:', err);
-      return { error: err.message || 'Login failed' };
+      return { error: mapFirebaseAuthError(err) };
     }
   }, [localUsers]);
 

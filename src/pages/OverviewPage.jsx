@@ -71,7 +71,7 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
         <ECard className="lg:col-span-3" delay={3}>
           <ECardHeader titleKey="monthlySavingsFlow" />
-          <div className="p-3 md:p-4">
+          <div className="p-3 md:p-4" role="img" aria-label={t(T.monthlySavingsFlow, lang)}>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={savingsChart} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />
@@ -85,7 +85,7 @@ export default function OverviewPage() {
         </ECard>
         <ECard className="lg:col-span-2" delay={4}>
           <ECardHeader titleKey="cumulativeGrowth" />
-          <div className="p-3 md:p-4">
+          <div className="p-3 md:p-4" role="img" aria-label={t(T.cumulativeGrowth, lang)}>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={savingsChart}>
                 <defs><linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#C69749" stopOpacity={0.3} /><stop offset="95%" stopColor="#C69749" stopOpacity={0.02} /></linearGradient></defs>
@@ -103,7 +103,7 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
         <ECard className="lg:col-span-3" delay={5}>
           <ECardHeader titleKey="loanActivity" />
-          <div className="p-3 md:p-4">
+          <div className="p-3 md:p-4" role="img" aria-label={t(T.loanActivity, lang)}>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={loanChart} barCategoryGap="25%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />

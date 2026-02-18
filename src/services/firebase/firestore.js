@@ -277,7 +277,7 @@ export const logActivity = async (activity) => {
   try {
     await addDoc(collection(db, 'groups', GROUP_ID, 'activityLog'), sanitizeActivity(activity));
   } catch (err) {
-    console.error('Error logging activity:', err);
+    console.warn('Activity log write failed:', err.message || err);
   }
 };
 

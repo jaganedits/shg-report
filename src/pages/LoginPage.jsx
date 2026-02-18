@@ -77,7 +77,7 @@ export default function LoginPage() {
           {canUseLocalAuthFallback && (
             <div className="bg-brass/8 text-brass-dark border border-brass/25 rounded-lg px-3 py-2 text-[11px] flex items-center gap-2 mb-3">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              DEV MODE: Firebase is not configured, using local fallback auth.
+              {t(T.devModeWarning, lang)}
             </div>
           )}
 

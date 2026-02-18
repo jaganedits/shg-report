@@ -239,6 +239,28 @@ const T = {
   sessionExpired: { en: 'Session expired. Please login again.', ta: 'அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்.' },
   sessionTimeout: { en: 'Auto-logout due to inactivity', ta: 'செயலற்ற நிலையால் தானாக வெளியேற்றம்' },
 
+  // ─── Firebase Auth Errors ───
+  authInvalidCredentials: { en: 'Invalid username or password', ta: 'தவறான பயனர்பெயர் அல்லது கடவுச்சொல்' },
+  authTooManyRequests: { en: 'Too many attempts. Please try again later', ta: 'பல முயற்சிகள். பின்னர் மீண்டும் முயற்சிக்கவும்' },
+  authNetworkError: { en: 'Network error. Please check your connection', ta: 'நெட்வொர்க் பிழை. இணைப்பை சரிபார்க்கவும்' },
+  authGenericError: { en: 'Login failed. Please try again', ta: 'உள்நுழைவு தோல்வி. மீண்டும் முயற்சிக்கவும்' },
+
+  // ─── Confirm Save ───
+  confirmSaveTitle: { en: 'Save Changes?', ta: 'மாற்றங்களை சேமிக்கவா?' },
+  confirmSaveDesc: { en: 'Are you sure you want to save the financial data for this month?', ta: 'இந்த மாதத்திற்கான நிதித் தரவை சேமிக்க விரும்புகிறீர்களா?' },
+  confirmSaveBtn: { en: 'Confirm Save', ta: 'சேமிப்பை உறுதிசெய்' },
+  savingData: { en: 'Saving...', ta: 'சேமிக்கிறது...' },
+
+  // ─── Empty States ───
+  noSearchResults: { en: 'No results found', ta: 'முடிவுகள் எதுவும் இல்லை' },
+  tryClearSearch: { en: 'Try a different search term', ta: 'வேறு தேடல் சொல்லை முயற்சிக்கவும்' },
+
+  // ─── Dev Mode ───
+  devModeWarning: { en: 'DEV MODE: Firebase is not configured, using local fallback auth.', ta: 'DEV MODE: Firebase கட்டமைக்கப்படவில்லை, உள்ளூர் அங்கீகாரம் பயன்படுத்தப்படுகிறது.' },
+
+  // ─── Sort Accessibility ───
+  sortBy: { en: 'Sort by', ta: 'வரிசைப்படுத்து' },
+
   // ─── Validation ───
   invalidAmount: { en: 'Invalid amount', ta: 'தவறான தொகை' },
   negativeNotAllowed: { en: 'Negative values not allowed', ta: 'எதிர்மறை மதிப்புகள் அனுமதிக்கப்படாது' },

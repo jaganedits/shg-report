@@ -5,9 +5,8 @@ import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import useViewMode from '@/lib/useViewMode';
+import { PAGE_SIZE } from '@/lib/constants';
 import { MetricCard, SectionHeader, ECard, ECardHeader, TH, TD, Btn, PageSkeleton, Pagination } from '@/components/shared';
-
-const PAGE_SIZE = 10;
 
 export default function LoansPage() {
   const lang = useLang();

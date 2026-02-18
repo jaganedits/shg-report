@@ -16,7 +16,7 @@ export default function Sidebar() {
           <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path || location.pathname === '/' + item.id;
+              const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
               return (
                 <NavLink
                   key={item.id}
@@ -43,7 +43,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-around px-1 py-1.5 pb-[env(safe-area-inset-bottom,4px)]">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path || location.pathname === '/' + item.id;
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
             return (
               <NavLink
                 key={item.id}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2, Save } from 'lucide-react';
+import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2, Save, SearchX } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,11 +7,9 @@ import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import useViewMode from '@/lib/useViewMode';
-import { PALETTE } from '@/lib/constants';
+import { PALETTE, PAGE_SIZE } from '@/lib/constants';
 import { SectionHeader, ECard, ECardHeader, FormInput, Btn, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-
-const PAGE_SIZE = 10;
 
 export default function MembersPage() {
   const lang = useLang();
@@ -136,7 +134,14 @@ export default function MembersPage() {
             </div>
           </div>
 
-          {viewMode === 'card' ? (
+          {sorted.length === 0 && search ? (
+            <div className="p-8 text-center">
+              <SearchX className="w-6 h-6 text-smoke/30 mx-auto mb-2" />
+              <p className="text-sm text-smoke font-medium">{t(T.noSearchResults, lang)}</p>
+              <p className="text-[11px] text-smoke/60 mt-1">{t(T.tryClearSearch, lang)}</p>
+              <button onClick={() => { setSearch(''); setPage(1); }} className="mt-2 text-[11px] text-terracotta hover:text-terracotta-deep underline">{t(T.cancel, lang)}</button>
+            </div>
+          ) : viewMode === 'card' ? (
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-1 gap-3">
                 {pagedSummaries.map((m) => {
@@ -179,34 +184,34 @@ export default function MembersPage() {
                 <thead><tr className="bg-cream-dark/50">
                   <TH align="left">#</TH>
                   <TH align="left">
-                    <span onClick={() => toggleSort('name')} className="cursor-pointer flex items-center gap-1 hover:text-charcoal transition-colors">
+                    <button type="button" onClick={() => toggleSort('name')} aria-label={`${t(T.sortBy, lang)} ${t(T.name, lang)}`} className="cursor-pointer flex items-center gap-1 hover:text-charcoal transition-colors bg-transparent border-none p-0 font-inherit text-inherit">
                       {t(T.name, lang)}
                       {sortKey === 'name' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                    </span>
+                    </button>
                   </TH>
                   <TH>
-                    <span onClick={() => toggleSort('totalSaved')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                    <button type="button" onClick={() => toggleSort('totalSaved')} aria-label={`${t(T.sortBy, lang)} ${t(T.totalSaved, lang)}`} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors bg-transparent border-none p-0 font-inherit text-inherit">
                       {t(T.totalSaved, lang)}
                       {sortKey === 'totalSaved' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                    </span>
+                    </button>
                   </TH>
                   <TH>
-                    <span onClick={() => toggleSort('finalCumulative')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                    <button type="button" onClick={() => toggleSort('finalCumulative')} aria-label={`${t(T.sortBy, lang)} ${t(T.cumulative, lang)}`} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors bg-transparent border-none p-0 font-inherit text-inherit">
                       {t(T.cumulative, lang)}
                       {sortKey === 'finalCumulative' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                    </span>
+                    </button>
                   </TH>
                   <TH>
-                    <span onClick={() => toggleSort('totalLoan')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                    <button type="button" onClick={() => toggleSort('totalLoan')} aria-label={`${t(T.sortBy, lang)} ${t(T.loan, lang)}`} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors bg-transparent border-none p-0 font-inherit text-inherit">
                       {t(T.loan, lang)}
                       {sortKey === 'totalLoan' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                    </span>
+                    </button>
                   </TH>
                   <TH>
-                    <span onClick={() => toggleSort('totalInterest')} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors">
+                    <button type="button" onClick={() => toggleSort('totalInterest')} aria-label={`${t(T.sortBy, lang)} ${t(T.interest, lang)}`} className="cursor-pointer flex items-center justify-center gap-1 hover:text-charcoal transition-colors bg-transparent border-none p-0 font-inherit text-inherit">
                       {t(T.interest, lang)}
                       {sortKey === 'totalInterest' ? (sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />) : <ArrowUpDown className="w-3.5 h-3.5 opacity-40" />}
-                    </span>
+                    </button>
                   </TH>
                   {isAdmin && <TH>{t(T.actions, lang)}</TH>}
                 </tr></thead>
@@ -219,10 +224,10 @@ export default function MembersPage() {
                         <TD align="left">
                           {editingId === m.id ? (
                             <div className="flex items-center gap-1">
-                              <input value={editName} onChange={e => setEditName(e.target.value)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-brass/40" />
-                              <input value={editNameTA} onChange={e => setEditNameTA(e.target.value)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 font-tamil focus:outline-none focus:ring-1 focus:ring-brass/40" placeholder="Tamil" />
-                              <button onClick={() => handleEdit(m.id)} className="text-forest hover:text-forest-light"><Check className="w-3.5 h-3.5" /></button>
-                              <button onClick={() => setEditingId(null)} className="text-smoke hover:text-ruby"><X className="w-3.5 h-3.5" /></button>
+                              <input value={editName} onChange={e => setEditName(e.target.value)} aria-label={t(T.nameEnglish, lang)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 focus:outline-none focus:ring-1 focus:ring-brass/40" />
+                              <input value={editNameTA} onChange={e => setEditNameTA(e.target.value)} aria-label={t(T.nameTamil, lang)} className="bg-ivory border border-brass/30 rounded px-1.5 py-0.5 text-xs w-24 font-tamil focus:outline-none focus:ring-1 focus:ring-brass/40" placeholder="Tamil" />
+                              <button onClick={() => handleEdit(m.id)} aria-label={t(T.save, lang)} className="text-forest hover:text-forest-light p-1.5"><Check className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => setEditingId(null)} aria-label={t(T.cancel, lang)} className="text-smoke hover:text-ruby p-1.5"><X className="w-3.5 h-3.5" /></button>
                             </div>
                           ) : <span className="font-medium">{displayName}</span>}
                         </TD>
@@ -233,9 +238,9 @@ export default function MembersPage() {
                         {isAdmin && (
                           <TD>
                             <div className="flex items-center gap-1 justify-end">
-                              <button onClick={() => startEdit(m)} aria-label={t(T.editUser, lang)} className="text-smoke hover:text-brass p-0.5"><Edit3 className="w-3 h-3" /></button>
+                              <button onClick={() => startEdit(m)} aria-label={t(T.editUser, lang)} className="text-smoke hover:text-brass p-1.5"><Edit3 className="w-3.5 h-3.5" /></button>
                               <ConfirmDialog
-                                trigger={<Button variant="ghost" size="icon-sm" aria-label={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby p-0.5"><Trash2 className="w-3 h-3" /></Button>}
+                                trigger={<Button variant="ghost" size="icon-sm" aria-label={t(T.deleteUser, lang)} className="text-smoke hover:text-ruby p-1.5"><Trash2 className="w-3.5 h-3.5" /></Button>}
                                 title={t(T.confirmDeleteMember, lang)}
                                 description={`${t(T.confirmDeleteMemberDesc, lang)}\n\n${displayName} (#${m.id})`}
                                 confirmLabel={t(T.delete, lang)}
@@ -284,7 +289,7 @@ export default function MembersPage() {
 
       {/* ── Edit Member Dialog (card view) ── */}
       {dialogMember && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={closeDialog}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label={t(T.editUser, lang)} onKeyDown={e => { if (e.key === 'Escape') closeDialog(); }} onClick={closeDialog}>
           <div className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm" />
           <div className="relative bg-ivory rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm shadow-xl border border-sand/60 animate-fade-up" onClick={e => e.stopPropagation()}>
             <div className="px-4 pt-4 pb-2 border-b border-sand/60 flex items-center justify-between">
@@ -292,7 +297,7 @@ export default function MembersPage() {
                 <p className="text-[10px] text-smoke">#{dialogMember.id}</p>
                 <h3 className="font-display text-sm font-semibold text-charcoal">{t(T.editUser, lang)}</h3>
               </div>
-              <button onClick={closeDialog} className="text-smoke hover:text-charcoal p-1"><X className="w-4 h-4" /></button>
+              <button onClick={closeDialog} aria-label={t(T.cancel, lang)} className="text-smoke hover:text-charcoal p-2"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-4 space-y-3">
               <div>
@@ -310,7 +315,7 @@ export default function MembersPage() {
                   value={dialogNameTA}
                   onChange={e => setDialogNameTA(e.target.value)}
                   className="w-full bg-cream-dark/40 border border-sand/50 rounded-lg px-3 py-2 text-sm font-tamil focus:outline-none focus:ring-2 focus:ring-terracotta/30"
-                  placeholder="தமிழ் பெயர்"
+                  placeholder={t(T.enterTamilName, lang)}
                 />
               </div>
             </div>

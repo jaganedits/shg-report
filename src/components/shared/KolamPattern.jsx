@@ -1,6 +1,6 @@
 export default function KolamPattern({ className = '' }) {
   return (
-    <svg className={className} viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation">
       <circle cx="15" cy="15" r="2" fill="currentColor" opacity="0.3"/>
       <circle cx="35" cy="15" r="2" fill="currentColor" opacity="0.3"/>
       <circle cx="55" cy="15" r="2" fill="currentColor" opacity="0.3"/>
