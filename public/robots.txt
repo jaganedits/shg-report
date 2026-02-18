@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://shg-report.vercel.app/sitemap.xml

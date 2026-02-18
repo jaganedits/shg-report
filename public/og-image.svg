@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#5C2E0E"/>
+  <rect x="0" y="0" width="1200" height="6" fill="url(#grad)"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#A0522D"/>
+      <stop offset="50%" style="stop-color:#C69749"/>
+      <stop offset="100%" style="stop-color:#2E7D5B"/>
+    </linearGradient>
+  </defs>
+  <!-- Decorative circles -->
+  <circle cx="200" cy="315" r="180" stroke="#C69749" stroke-width="1" fill="none" opacity="0.08"/>
+  <circle cx="200" cy="315" r="120" stroke="#C69749" stroke-width="1" fill="none" opacity="0.06"/>
+  <circle cx="1000" cy="315" r="200" stroke="#C69749" stroke-width="1" fill="none" opacity="0.06"/>
+  <!-- Logo -->
+  <rect x="540" y="140" width="120" height="120" rx="24" fill="#7A3A15"/>
+  <circle cx="600" cy="200" r="38" stroke="#C69749" stroke-width="2" fill="none" opacity="0.5"/>
+  <text x="600" y="212" text-anchor="middle" font-family="serif" font-weight="bold" font-size="40" fill="#F5E6D0">SA</text>
+  <!-- Title -->
+  <text x="600" y="320" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="44" fill="#F5E6D0">Shree Annai Women</text>
+  <text x="600" y="375" text-anchor="middle" font-family="Georgia, serif" font-weight="bold" font-size="40" fill="#C69749">Self Help Group</text>
+  <!-- Tamil name -->
+  <text x="600" y="430" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#F5E6D0" opacity="0.5">ஸ்ரீ அன்னை மகளிர் சுய உதவி குழு</text>
+  <!-- Tagline -->
+  <text x="600" y="490" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#C69749" opacity="0.6">Savings · Loans · Financial Management</text>
+  <!-- Kolam dots -->
+  <circle cx="460" cy="540" r="3" fill="#C69749" opacity="0.2"/>
+  <circle cx="520" cy="540" r="3" fill="#C69749" opacity="0.2"/>
+  <circle cx="580" cy="540" r="3" fill="#C69749" opacity="0.3"/>
+  <circle cx="640" cy="540" r="3" fill="#C69749" opacity="0.2"/>
+  <circle cx="700" cy="540" r="3" fill="#C69749" opacity="0.2"/>
+</svg>
