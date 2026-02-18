@@ -2,9 +2,8 @@ import { Outlet } from 'react-router-dom';
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast, toast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import useSessionTimeout from '@/hooks/useSessionTimeout';
-import { ToastContainer } from '@/components/ui/toast';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import KolamPattern from '@/components/shared/KolamPattern';
@@ -13,8 +12,6 @@ export default function MainLayout() {
   const lang = useLang();
   const { groupClosed } = useData();
   const { logout } = useAuth();
-  const { toasts, dismiss } = useToast();
-
   useSessionTimeout(() => {
     toast({ title: 'Session expired. Please login again.', variant: 'destructive', duration: 5000 });
     logout();
@@ -38,7 +35,6 @@ export default function MainLayout() {
         </div>
       </footer>
 
-      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   );
 }

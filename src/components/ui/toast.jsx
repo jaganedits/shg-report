@@ -23,8 +23,8 @@ function ToastItem({ toast, onDismiss }) {
 
   const variants = {
     default: "bg-ivory border-sand text-charcoal",
-    success: "bg-forest/5 border-forest/30 text-forest",
-    destructive: "bg-ruby/5 border-ruby/30 text-ruby",
+    success: "bg-emerald-50 border-forest/40 text-forest",
+    destructive: "bg-red-50 border-ruby/40 text-ruby",
   }
 
   const icons = {
@@ -38,7 +38,7 @@ function ToastItem({ toast, onDismiss }) {
   return (
     <div
       className={cn(
-        "pointer-events-auto relative flex w-full max-w-[360px] items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-xl shadow-charcoal/10 transition-all duration-300",
+        "pointer-events-auto relative flex w-full max-w-[360px] items-center gap-3 overflow-hidden rounded-xl border-2 px-4 py-3 shadow-2xl shadow-charcoal/20 backdrop-blur-sm transition-all duration-300",
         variants[variant],
         visible && !exiting ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
       )}

@@ -10,8 +10,9 @@ import { INTEREST_RATE } from '@/data/sampleData';
 import { toast } from '@/hooks/use-toast';
 import { assertMemberRecord, assertValidYear } from '@/lib/validators';
 import { PAGE_SIZE } from '@/lib/constants';
-import { SectionHeader, ECard, ECardHeader, FormInput, Btn, NumInput, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
+import { SectionHeader, ECard, ECardHeader, Btn, NumInput, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function DataEntryPage() {
   const lang = useLang();
@@ -20,7 +21,6 @@ export default function DataEntryPage() {
   const [selMonth, setSelMonth] = useState(0);
   const [editData, setEditData] = useState(null);
   const [saved, setSaved] = useState(false);
-  const [newYear, setNewYear] = useState('');
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useViewMode('dataEntry');
   const [isSaving, setIsSaving] = useState(false);
@@ -106,17 +106,23 @@ export default function DataEntryPage() {
   };
   const closeDialog = () => { setDialogIdx(null); setDialogFields(null); };
 
-  const handleAddYear = () => {
+  const handleAddYear = (yearStr) => {
     try {
-      const y = assertValidYear(parseInt(newYear, 10));
+      const y = assertValidYear(parseInt(yearStr, 10));
       if (!years.includes(y)) {
         addNewYear(y);
-        setNewYear('');
       }
     } catch (err) {
       toast({ title: err.message || 'Invalid year', variant: 'destructive', duration: 4000 });
     }
   };
+
+  // Generate year options (current year ± 5, excluding already-added years)
+  const currentCalendarYear = new Date().getFullYear();
+  const yearOptions = [];
+  for (let y = currentCalendarYear - 5; y <= currentCalendarYear + 2; y++) {
+    if (!years.includes(y)) yearOptions.push(y);
+  }
   const currentMembers = editData || md.members;
   const totalPages = Math.ceil(currentMembers.length / PAGE_SIZE);
   const safePage = Math.min(page, Math.max(1, totalPages));
@@ -152,9 +158,22 @@ export default function DataEntryPage() {
           <AlertTriangle className="w-4 h-4 shrink-0" />Only admins can edit monthly data.
         </div>
       )}
-      <div className="animate-fade-up delay-1 flex items-end gap-2 md:gap-3 flex-wrap">
-        <FormInput label={t(T.addNewYear, lang)} type="number" value={newYear} onChange={e => setNewYear(e.target.value)} placeholder="e.g. 2025" icon={Calendar} className="w-32 md:w-40" />
-        <Btn onClick={handleAddYear} icon={Plus} variant="secondary" size="md" disabled={!newYear || groupClosed || !isAdmin}>{t(T.addYear, lang)}</Btn>
+      <div className="animate-fade-up delay-1 flex items-center gap-2 md:gap-3 flex-wrap">
+        {isAdmin && !groupClosed && yearOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-smoke shrink-0" />
+            <Select onValueChange={handleAddYear}>
+              <SelectTrigger className="w-36 md:w-44 h-9">
+                <SelectValue placeholder={t(T.addNewYear, lang)} />
+              </SelectTrigger>
+              <SelectContent>
+                {yearOptions.map(y => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="flex gap-1 flex-wrap ml-auto">
           {years.map(y => <span key={y} className={`font-display text-[11px] font-bold px-2.5 py-1 rounded-lg ${y === year ? 'text-cream bg-terracotta-deep' : 'text-terracotta-deep bg-terracotta/8'}`}>{y}</span>)}
         </div>

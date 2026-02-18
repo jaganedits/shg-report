@@ -28,11 +28,6 @@ export function useToast() {
   useEffect(() => {
     const handler = (t) => {
       setToasts(prev => [...prev, t])
-      if (t.duration > 0) {
-        setTimeout(() => {
-          setToasts(prev => prev.filter(item => item.id !== t.id))
-        }, t.duration)
-      }
     }
     listeners.push(handler)
 

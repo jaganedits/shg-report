@@ -134,13 +134,20 @@ export default function MembersPage() {
             </div>
           </div>
 
-          {sorted.length === 0 && search ? (
-            <div className="p-8 text-center">
-              <SearchX className="w-6 h-6 text-smoke/30 mx-auto mb-2" />
-              <p className="text-sm text-smoke font-medium">{t(T.noSearchResults, lang)}</p>
-              <p className="text-[11px] text-smoke/60 mt-1">{t(T.tryClearSearch, lang)}</p>
-              <button onClick={() => { setSearch(''); setPage(1); }} className="mt-2 text-[11px] text-terracotta hover:text-terracotta-deep underline">{t(T.cancel, lang)}</button>
-            </div>
+          {sorted.length === 0 ? (
+            search ? (
+              <div className="p-8 text-center">
+                <SearchX className="w-6 h-6 text-smoke/30 mx-auto mb-2" />
+                <p className="text-sm text-smoke font-medium">{t(T.noSearchResults, lang)}</p>
+                <p className="text-[11px] text-smoke/60 mt-1">{t(T.tryClearSearch, lang)}</p>
+                <button onClick={() => { setSearch(''); setPage(1); }} className="mt-2 text-[11px] text-terracotta hover:text-terracotta-deep underline">{t(T.cancel, lang)}</button>
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <Users className="w-6 h-6 text-smoke/30 mx-auto mb-2" />
+                <p className="text-sm text-smoke font-medium">{t(T.noMembersFound, lang)}</p>
+              </div>
+            )
           ) : viewMode === 'card' ? (
             <div className="p-4 space-y-3">
               <div className="grid grid-cols-1 gap-3">

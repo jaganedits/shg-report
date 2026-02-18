@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LangProvider } from '@/contexts/LangContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DataProvider } from '@/contexts/DataContext';
+import { useToast } from '@/hooks/use-toast';
+import { ToastContainer } from '@/components/ui/toast';
 import ProtectedRoute from '@/components/layout/ProtectedRoute';
 import MainLayout from '@/components/layout/MainLayout';
 import { AppSkeleton, PageSkeleton } from '@/components/shared';
@@ -19,6 +21,11 @@ const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 
 function PageFallback() {
   return <PageSkeleton type="dashboard" />;
+}
+
+function GlobalToasts() {
+  const { toasts, dismiss } = useToast();
+  return <ToastContainer toasts={toasts} dismiss={dismiss} />;
 }
 
 export default function App() {
@@ -43,6 +50,7 @@ export default function App() {
               </Route>
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
+            <GlobalToasts />
           </DataProvider>
         </AuthProvider>
       </LangProvider>
