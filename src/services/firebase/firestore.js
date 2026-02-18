@@ -283,7 +283,7 @@ export const logActivity = async (activity) => {
   try {
     await addDoc(collection(db, 'groups', GROUP_ID, 'activityLog'), sanitizeActivity(activity));
   } catch (err) {
-    console.warn('Activity log write failed:', err.message || err);
+    // Silently ignore — activity log is non-critical
   }
 };
 

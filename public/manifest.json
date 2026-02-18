@@ -1,0 +1,21 @@
+{
+  "name": "Shree Annai Women Self Help Group",
+  "short_name": "Shree Annai SHG",
+  "description": "Financial management for Shree Annai Women Self Help Group — savings, loans, interest & member records.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF6EC",
+  "theme_color": "#5C2E0E",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "lang": "ta",
+  "dir": "ltr"
+}

@@ -34,7 +34,7 @@ if (isFirebaseConfigured) {
   db = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   });
-} else if (firebaseConfigError) {
+} else if (firebaseConfigError && import.meta.env.DEV) {
   console.error(firebaseConfigError);
 }
 

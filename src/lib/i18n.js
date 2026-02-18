@@ -304,6 +304,11 @@ const T = {
   happyFriday: { en: 'Happy Friday', ta: 'இனிய வெள்ளிக்கிழமை' },
   happySaturday: { en: 'Happy Saturday', ta: 'இனிய சனிக்கிழமை' },
   haveAGreatDay: { en: 'Have a great day', ta: 'நல்ல நாளாக அமையட்டும்' },
+
+  // ─── 404 Page ───
+  pageNotFound: { en: 'Page Not Found', ta: 'பக்கம் கிடைக்கவில்லை' },
+  pageNotFoundDesc: { en: 'The page you are looking for does not exist or has been moved.', ta: 'நீங்கள் தேடும் பக்கம் இல்லை அல்லது மாற்றப்பட்டுள்ளது.' },
+  goHome: { en: 'Go to Overview', ta: 'கண்ணோட்டத்திற்கு செல்' },
 };
 
 export default T;

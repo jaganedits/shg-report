@@ -116,11 +116,10 @@ export function AuthProvider({ children }) {
             status: profile?.status || 'active',
           });
         } catch (err) {
-          console.error('Error loading user profile:', err);
           try {
             await firebaseAuth.signOut();
-          } catch (signOutErr) {
-            console.error('Sign out after profile load failure failed:', signOutErr);
+          } catch (_) {
+            // sign-out best-effort
           }
           setUser(null);
         }
@@ -169,7 +168,6 @@ export function AuthProvider({ children }) {
       });
       return { success: true };
     } catch (err) {
-      console.error('Login error:', err);
       return { error: mapFirebaseAuthError(err) };
     }
   }, [localUsers]);
@@ -183,10 +181,10 @@ export function AuthProvider({ children }) {
           user: logoutUser,
           detail: `${logoutUser} logged out`,
         });
-      } catch (err) {
-        console.error('Activity log error:', err);
+      } catch (_) {
+        // activity log best-effort
       }
-      try { await firebaseAuth.signOut(); } catch (err) { console.error('Logout error:', err); }
+      try { await firebaseAuth.signOut(); } catch (_) { /* best-effort */ }
     }
     setUser(null);
   }, [user]);
@@ -234,7 +232,6 @@ export function AuthProvider({ children }) {
         target: username,
       });
     } catch (err) {
-      console.error('Register error:', err);
       if (isPermissionDeniedError(err)) throw new Error('You do not have permission to create users');
       throw err;
     }
@@ -281,7 +278,6 @@ export function AuthProvider({ children }) {
         throw new Error(`User "${username}" not found`);
       }
     } catch (err) {
-      console.error('Update user error:', err);
       if (isPermissionDeniedError(err)) throw new Error('You do not have permission to update users');
       throw err;
     }
@@ -320,7 +316,6 @@ export function AuthProvider({ children }) {
         throw new Error(`User "${username}" not found`);
       }
     } catch (err) {
-      console.error('Update user status error:', err);
       if (isPermissionDeniedError(err)) throw new Error('You do not have permission to update user status');
       throw err;
     }
@@ -357,7 +352,6 @@ export function AuthProvider({ children }) {
         detail: `${user.username} changed password`,
       });
     } catch (err) {
-      console.error('Change password error:', err);
       if (String(err?.code || '').includes('wrong-password')) throw new Error('Current password is incorrect');
       throw err;
     }

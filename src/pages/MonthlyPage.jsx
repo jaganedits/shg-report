@@ -61,8 +61,7 @@ function exportExcel(md, members, lang, selectedYear) {
       ? `மாதாந்திர_பேரேடு_${md.month}_${selectedYear}.xlsx`
       : `Monthly_Ledger_${md.month}_${selectedYear}.xlsx`;
     XLSX.writeFile(wb, filename);
-  }).catch((err) => {
-    console.error('Excel export failed:', err);
+  }).catch(() => {
     alert('Excel export failed. Please try again.');
   });
 }
@@ -76,7 +75,6 @@ function exportPDF(md, members, lang, selectedYear) {
   ]).then(([jsPDFModule, autoTableModule, fontModule]) => {
     const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
     if (!jsPDF) {
-      console.error('jsPDF constructor not found. Module keys:', Object.keys(jsPDFModule));
       alert('PDF export failed to load. Please try again.');
       return;
     }
@@ -179,8 +177,7 @@ function exportPDF(md, members, lang, selectedYear) {
       ? `மாதாந்திர_பேரேடு_${md.month}_${selectedYear}.pdf`
       : `Monthly_Ledger_${md.month}_${selectedYear}.pdf`;
     doc.save(filename);
-  }).catch((err) => {
-    console.error('PDF export failed:', err);
+  }).catch(() => {
     alert('PDF export failed. Please try again.');
   });
 }

@@ -61,7 +61,6 @@ export function DataProvider({ children }) {
   }, [isAdmin]);
 
   const showWriteError = useCallback((err, fallbackTitle) => {
-    console.error(fallbackTitle, err);
     if (isPermissionDeniedError(err)) {
       toast({
         title: 'Permission denied',
@@ -110,7 +109,6 @@ export function DataProvider({ children }) {
           if (Object.keys(yearsData).length > 0) setAllYearsData(yearsData);
         }
       } catch (err) {
-        console.error('Error loading from Firestore:', err);
         toast({ title: 'Failed to load data. Showing cached data.', variant: 'destructive', duration: 5000 });
       } finally {
         setFirestoreLoaded(true);
