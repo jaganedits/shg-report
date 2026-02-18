@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Plus, Save, X, PenLine, Check, AlertTriangle, LayoutGrid, Table2, Loader2 } from 'lucide-react';
+import { Save, X, PenLine, Check, AlertTriangle, LayoutGrid, Table2, Loader2 } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,12 +12,11 @@ import { assertMemberRecord, assertValidYear } from '@/lib/validators';
 import { PAGE_SIZE } from '@/lib/constants';
 import { SectionHeader, ECard, ECardHeader, Btn, NumInput, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 export default function DataEntryPage() {
   const lang = useLang();
   const { isAdmin } = useAuth();
-  const { currentData: data, members, selectedYear: year, years, updateMonthData, addNewYear, groupClosed } = useData();
+  const { currentData: data, members, selectedYear: year, years, setSelectedYear, updateMonthData, groupClosed } = useData();
   const [selMonth, setSelMonth] = useState(0);
   const [editData, setEditData] = useState(null);
   const [saved, setSaved] = useState(false);
@@ -106,23 +105,6 @@ export default function DataEntryPage() {
   };
   const closeDialog = () => { setDialogIdx(null); setDialogFields(null); };
 
-  const handleAddYear = (yearStr) => {
-    try {
-      const y = assertValidYear(parseInt(yearStr, 10));
-      if (!years.includes(y)) {
-        addNewYear(y);
-      }
-    } catch (err) {
-      toast({ title: err.message || 'Invalid year', variant: 'destructive', duration: 4000 });
-    }
-  };
-
-  // Generate year options (current year ± 5, excluding already-added years)
-  const currentCalendarYear = new Date().getFullYear();
-  const yearOptions = [];
-  for (let y = currentCalendarYear - 5; y <= currentCalendarYear + 2; y++) {
-    if (!years.includes(y)) yearOptions.push(y);
-  }
   const currentMembers = editData || md.members;
   const totalPages = Math.ceil(currentMembers.length / PAGE_SIZE);
   const safePage = Math.min(page, Math.max(1, totalPages));
@@ -158,25 +140,16 @@ export default function DataEntryPage() {
           <AlertTriangle className="w-4 h-4 shrink-0" />Only admins can edit monthly data.
         </div>
       )}
-      <div className="animate-fade-up delay-1 flex items-center gap-2 md:gap-3 flex-wrap">
-        {isAdmin && !groupClosed && yearOptions.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-smoke shrink-0" />
-            <Select onValueChange={handleAddYear}>
-              <SelectTrigger className="w-36 md:w-44 h-9">
-                <SelectValue placeholder={t(T.addNewYear, lang)} />
-              </SelectTrigger>
-              <SelectContent>
-                {yearOptions.map(y => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        <div className="flex gap-1 flex-wrap ml-auto">
-          {years.map(y => <span key={y} className={`font-display text-[11px] font-bold px-2.5 py-1 rounded-lg ${y === year ? 'text-cream bg-terracotta-deep' : 'text-terracotta-deep bg-terracotta/8'}`}>{y}</span>)}
-        </div>
+      <div className="animate-fade-up delay-1 flex gap-1.5 flex-wrap items-center">
+        {years.map(y => (
+          <button
+            key={y}
+            onClick={() => setSelectedYear(y)}
+            className={cn('font-display text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors', y === year ? 'text-cream bg-terracotta-deep' : 'text-terracotta-deep bg-terracotta/8 hover:bg-terracotta/15')}
+          >
+            {y}
+          </button>
+        ))}
       </div>
 
       {/* Month pills — 6-column grid on mobile */}

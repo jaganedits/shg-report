@@ -13,6 +13,8 @@ const T = {
   enterUsername: { en: 'Enter username', ta: 'பயனர்பெயரை உள்ளிடவும்' },
   enterPassword: { en: 'Enter password', ta: 'கடவுச்சொல்லை உள்ளிடவும்' },
   loginError: { en: 'Please enter username and password', ta: 'பயனர்பெயர் மற்றும் கடவுச்சொல்லை உள்ளிடவும்' },
+  usernameRequired: { en: 'Username is required', ta: 'பயனர்பெயர் தேவை' },
+  passwordRequired: { en: 'Password is required', ta: 'கடவுச்சொல் தேவை' },
   protoHint: { en: 'Prototype: Use "admin" as username for admin access', ta: 'முன்மாதிரி: நிர்வாகி அணுகலுக்கு "admin" என பயனர்பெயர் கொடுக்கவும்' },
 
   // ─── Registration ───
@@ -82,6 +84,7 @@ const T = {
 
   // ─── Monthly ───
   monthlyLedger: { en: 'Monthly Ledger', ta: 'மாதாந்திர பேரேடு' },
+  monthlyLedgerDesc: { en: 'View monthly savings & loan details', ta: 'மாதாந்திர சேமிப்பு & கடன் விவரங்களைக் காணவும்' },
   monthSaving: { en: 'Month Saving', ta: 'மாத சேமிப்பு' },
   loans: { en: 'Loans', ta: 'கடன்' },
   memberDetails: { en: 'Member Details', ta: 'உறுப்பினர் விவரங்கள்' },
@@ -117,6 +120,7 @@ const T = {
 
   // ─── Loans ───
   loanManagement: { en: 'Loan Management', ta: 'கடன் மேலாண்மை' },
+  loanManagementDesc: { en: 'Track loans, repayments & interest', ta: 'கடன், திருப்பிச் செலுத்தல் & வட்டியைக் கண்காணிக்கவும்' },
   totalDisbursed: { en: 'Total Disbursed', ta: 'வழங்கிய மொத்தம்' },
   loansCount: { en: 'Loans Count', ta: 'கடன் எண்ணிக்கை' },
   avgLoan: { en: 'Avg Loan', ta: 'சராசரி கடன்' },
@@ -168,6 +172,11 @@ const T = {
   allTimeSummary: { en: 'All-Time Summary', ta: 'மொத்த சுருக்கம்' },
   yearsActive: { en: 'Years Active', ta: 'செயலில் ஆண்டுகள்' },
   loggedInAs: { en: 'Logged In As', ta: 'உள்நுழைந்தவர்' },
+  yearManagement: { en: 'Year Management', ta: 'ஆண்டு மேலாண்மை' },
+  existingYears: { en: 'Existing Years', ta: 'இருக்கும் ஆண்டுகள்' },
+  hasData: { en: 'Has data', ta: 'தரவு உள்ளது' },
+  emptyYear: { en: 'Empty', ta: 'காலியானது' },
+  cannotDeleteWithData: { en: 'Has data — cannot delete', ta: 'தரவு உள்ளது — நீக்க முடியாது' },
   groupClosing: { en: 'Group Closing', ta: 'குழு முடித்தல்' },
   groupClosingDesc: { en: 'Closing the group will prevent any new data entries. This action is reversible by admin.', ta: 'குழுவை முடிப்பது புதிய தரவு உள்ளீடுகளை தடுக்கும். இந்த செயலை நிர்வாகி மீண்டும் மாற்றலாம்.' },
   closeGroup: { en: 'Close Group', ta: 'குழுவை முடி' },
@@ -270,6 +279,20 @@ const T = {
   // ─── View Toggle ───
   cardView: { en: 'Cards', ta: 'அட்டை' },
   tableView: { en: 'Table', ta: 'அட்டவணை' },
+
+  // ─── Welcome / Greeting ───
+  goodMorning: { en: 'Good morning', ta: 'காலை வணக்கம்' },
+  goodAfternoon: { en: 'Good afternoon', ta: 'மதிய வணக்கம்' },
+  goodEvening: { en: 'Good evening', ta: 'மாலை வணக்கம்' },
+  welcomeBack: { en: 'Welcome back', ta: 'மீண்டும் வரவேற்கிறோம்' },
+  happySunday: { en: 'Happy Sunday', ta: 'இனிய ஞாயிற்றுக்கிழமை' },
+  happyMonday: { en: 'Happy Monday', ta: 'இனிய திங்கட்கிழமை' },
+  happyTuesday: { en: 'Happy Tuesday', ta: 'இனிய செவ்வாய்க்கிழமை' },
+  happyWednesday: { en: 'Happy Wednesday', ta: 'இனிய புதன்கிழமை' },
+  happyThursday: { en: 'Happy Thursday', ta: 'இனிய வியாழக்கிழமை' },
+  happyFriday: { en: 'Happy Friday', ta: 'இனிய வெள்ளிக்கிழமை' },
+  happySaturday: { en: 'Happy Saturday', ta: 'இனிய சனிக்கிழமை' },
+  haveAGreatDay: { en: 'Have a great day', ta: 'நல்ல நாளாக அமையட்டும்' },
 };
 
 export default T;

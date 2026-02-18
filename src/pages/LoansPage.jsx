@@ -41,7 +41,7 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader titleKey="loanManagement" />
+      <SectionHeader titleKey="loanManagement" subtitle={t(T.loanManagementDesc, lang)} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <MetricCard titleKey="totalDisbursed" value={formatCurrency(totalLoans)} icon={CreditCard} accent="ruby" delay={1} />
         <MetricCard titleKey="interestEarned" value={formatCurrency(totalInterest)} icon={IndianRupee} accent="forest" delay={2} />

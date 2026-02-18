@@ -1,14 +1,55 @@
-import { Wallet, TrendingUp, CreditCard, IndianRupee, Calendar, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import { useMemo } from 'react';
+import { Wallet, TrendingUp, CreditCard, IndianRupee, Calendar, FileSpreadsheet, AlertTriangle, Quote } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import T, { t } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import { MetricCard, SectionHeader, ECard, ECardHeader, CustomTooltip, RecentActivity, PageSkeleton } from '@/components/shared';
 
+const HAPPY_DAYS = [T.happySunday, T.happyMonday, T.happyTuesday, T.happyWednesday, T.happyThursday, T.happyFriday, T.happySaturday];
+
+const QUOTES = [
+  { ta: 'அகர முதல எழுத்தெல்லாம் ஆதி\nபகவன் முதற்றே உலகு', en: 'As "A" is the first of all letters, so is the Eternal God first in the world.', kural: 1 },
+  { ta: 'ஒருமையுள் ஆமைபோல் ஐந்தடக்கல் ஆற்றின்\nஎழுமையும் ஏமாப்பு உடைத்து', en: 'Who curbs the five senses in one birth, finds strength for seven.', kural: 126 },
+  { ta: 'உடையர் எனப்படுவது ஊக்கம் அஃதிலார்\nஉடையது உடையரோ மற்று', en: 'The possession called courage is the true wealth; all else is nothing.', kural: 591 },
+  { ta: 'ஆக்கம் அதர்வினாய்ச் செல்லும் அசைவிலா\nஊக்கம் உடையான் உழை', en: 'Prosperity seeks the path to those who possess unwavering perseverance.', kural: 594 },
+  { ta: 'அருளில்லார்க்கு அவ்வுலகம் இல்லை\nபொருளில்லார்க்கு இவ்வுலகம் இல்லாகி யாங்கு', en: 'As the graceless have no afterworld, so the resourceless have none in this.', kural: 247 },
+  { ta: 'சேமிப்பு என்பது சிறந்த அணிகலன்\nபெண்ணின் கையில் பேராற்றல் தரும்', en: 'Savings is the finest ornament — in a woman\'s hand, it becomes great power.', kural: 0 },
+  { ta: 'ஒற்றுமையே வலிமை, வலிமையே வெற்றி\nவெற்றியே வாழ்வின் அடிப்படை', en: 'Unity is strength, strength is victory, and victory is the foundation of life.', kural: 0 },
+];
+
+function getDailyQuote() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / 86400000);
+  return QUOTES[dayOfYear % QUOTES.length];
+}
+
+function getGreeting(lang) {
+  const now = new Date();
+  const hour = now.getHours();
+  const day = now.getDay();
+
+  // Primary: time-based greeting
+  let primary;
+  if (hour >= 5 && hour < 12) primary = t(T.goodMorning, lang);
+  else if (hour >= 12 && hour < 17) primary = t(T.goodAfternoon, lang);
+  else primary = t(T.goodEvening, lang);
+
+  // Secondary: day-based or general (rotate based on day)
+  const secondary = t(HAPPY_DAYS[day], lang);
+
+  return { primary, secondary };
+}
+
 export default function OverviewPage() {
   const lang = useLang();
   const { currentData: data, summary, selectedYear: year, members } = useData();
+  const { user } = useAuth();
+  const greeting = useMemo(() => getGreeting(lang), [lang]);
+  const quote = useMemo(() => getDailyQuote(), []);
 
   if (!data || !summary) return <PageSkeleton type="dashboard" />;
 
@@ -41,7 +82,25 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader titleKey="annualReport" subtitle={`${t(T.completeSummary, lang)} — ${year}`} />
+      {/* Welcome greeting */}
+      <div className="animate-fade-up mb-1">
+        <h2 className={`font-display text-lg md:text-xl font-bold text-charcoal tracking-tight ${lang === 'ta' ? 'font-tamil' : ''}`}>
+          {greeting.primary}, {lang === 'ta' && user?.fullNameTA ? user.fullNameTA : user?.fullName || user?.username} 👋
+        </h2>
+        <p className="text-[11px] text-smoke mt-0.5">{greeting.secondary} · {t(T.completeSummary, lang)} — {year}</p>
+        <div className="kolam-border mt-2" />
+      </div>
+
+      {/* Today's Quote */}
+      <div className="animate-fade-up delay-1 bg-brass/5 border border-brass/15 rounded-xl px-4 py-3 flex gap-3 items-start">
+        <Quote className="w-5 h-5 text-brass/40 shrink-0 mt-0.5" />
+        <div className="min-w-0">
+          <p className="font-tamil text-[11px] text-terracotta-deep/80 leading-relaxed whitespace-pre-line">{quote.ta}</p>
+          <p className="text-[9px] text-smoke/60 mt-1 leading-relaxed">{quote.en}</p>
+          {quote.kural > 0 && <p className="text-[8px] text-brass/50 mt-1 tracking-wider">— {lang === 'ta' ? 'திருக்குறள்' : 'Thirukkural'} {quote.kural}</p>}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
         <MetricCard titleKey="totalSavings" value={formatCurrency(summary.totalSavings)} icon={Wallet} accent="terracotta" delay={1} />
         <MetricCard titleKey="cumulativeFund" value={formatCurrency(summary.finalCumulative)} icon={TrendingUp} accent="brass" delay={2} />

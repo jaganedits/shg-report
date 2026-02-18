@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLang, useLangContext } from '@/contexts/LangContext';
 import T, { t } from '@/lib/i18n';
 import { GROUP_INFO } from '@/data/sampleData';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import LangToggle from '@/components/shared/LangToggle';
 import KolamPattern from '@/components/shared/KolamPattern';
@@ -19,7 +20,6 @@ export default function LoginPage() {
   const { login, isAuthenticated, canUseLocalAuthFallback, configurationError } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -28,14 +28,17 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) { setError(t(T.loginError, lang)); return; }
+    if (!username.trim() || !password.trim()) {
+      toast({ title: t(T.loginError, lang), variant: 'destructive' });
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await login(username, password);
-      if (result?.error) { setError(result.error || t(T.loginError, lang)); setSubmitting(false); return; }
+      if (result?.error) { toast({ title: result.error, variant: 'destructive' }); setSubmitting(false); return; }
       if (!result?.success) navigate('/overview');
     } catch {
-      setError(t(T.loginError, lang));
+      toast({ title: t(T.loginError, lang), variant: 'destructive' });
       setSubmitting(false);
     }
   };
@@ -95,17 +98,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-3">
             <FormInput label={t(T.username, lang)} value={username}
-              onChange={(e) => { setUsername(e.target.value); setError(''); }}
+              onChange={(e) => setUsername(e.target.value)}
               placeholder={t(T.enterUsername, lang)} icon={User} />
             <PasswordInput label={t(T.password, lang)} value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(''); }}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder={t(T.enterPassword, lang)} />
-
-            {error && (
-              <div className="bg-ruby/8 text-ruby border border-ruby/20 rounded-lg px-3 py-2 text-[11px] flex items-center gap-2">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />{error}
-              </div>
-            )}
 
             <Button
               type="submit"
@@ -114,13 +111,18 @@ export default function LoginPage() {
             >
               <LogIn className="w-4 h-4" /> {submitting ? '...' : t(T.login, lang)}
             </Button>
-
-            <p className="text-[9px] text-smoke/40 text-center mt-2">{t(T.protoHint, lang)}</p>
           </form>
         </div>
 
-        <div className="text-center mt-3">
-          <KolamPattern className="w-20 text-sand-dark mx-auto mt-1" />
+        <div className="text-center mt-3 space-y-1.5">
+          <KolamPattern className="w-20 text-sand-dark mx-auto" />
+          <p className="text-[10px] text-smoke flex items-center justify-center gap-1.5">
+            Powered by{' '}
+            <a href="https://github.com/jaganedits" target="_blank" rel="noopener noreferrer" className="text-charcoal hover:text-terracotta transition-colors font-semibold">jaganedits</a>
+            <a href="https://www.linkedin.com/in/jaganedits/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-smoke hover:text-terracotta transition-colors">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+          </p>
         </div>
       </div>
     </div>

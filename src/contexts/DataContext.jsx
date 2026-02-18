@@ -245,6 +245,61 @@ export function DataProvider({ children }) {
     toast({ title: `Year ${safeYear} added`, variant: 'success' });
   }, [allYearsData, currentUsername, groupClosed, members, requireAdminAction, saveYearToFirestore]);
 
+  const deleteYear = useCallback(async (year) => {
+    if (!requireAdminAction('delete a year')) return;
+    let safeYear;
+    try {
+      safeYear = assertValidYear(year);
+    } catch (err) {
+      toast({ title: err.message || 'Invalid year', variant: 'destructive', duration: 4000 });
+      return;
+    }
+    const yearData = allYearsData[safeYear];
+    if (!yearData) return;
+
+    // Check if any month has data entered (non-zero savings, loans, or repayments)
+    const hasData = yearData.months.some(m =>
+      m.members.some(mem =>
+        (mem.saving || 0) > 0 || (mem.loanTaken || 0) > 0 || (mem.loanRepayment || 0) > 0
+      )
+    );
+    if (hasData) {
+      toast({
+        title: 'Cannot delete this year',
+        description: 'This year has financial data entered. Remove all data first.',
+        variant: 'destructive',
+        duration: 5000,
+      });
+      return;
+    }
+
+    // Safe to delete — no data entered
+    const updated = { ...allYearsData };
+    delete updated[safeYear];
+    setAllYearsData(updated);
+
+    // Switch to another year if the deleted one was selected
+    if (selectedYear === safeYear) {
+      const remaining = Object.keys(updated).map(Number).sort();
+      setSelectedYear(remaining.length > 0 ? remaining[remaining.length - 1] : null);
+    }
+
+    if (isFirebaseConfigured) {
+      try {
+        await firestore.deleteYearData(safeYear);
+      } catch (err) {
+        showWriteError(err, 'Failed to delete year');
+      }
+    }
+    void firestore.logActivity({
+      type: 'year_delete',
+      user: currentUsername,
+      detail: `Deleted year ${safeYear}`,
+      year: safeYear,
+    });
+    toast({ title: `Year ${safeYear} deleted`, variant: 'success' });
+  }, [allYearsData, currentUsername, requireAdminAction, selectedYear, showWriteError]);
+
   const addMember = useCallback(async (name, nameTA) => {
     if (!requireAdminAction('add members')) return;
 
@@ -423,7 +478,7 @@ export function DataProvider({ children }) {
       members, groupClosed, years,
       currentData, summary,
       groupInfo, firestoreLoaded,
-      updateMonthData, addNewYear, addMember, removeMember, editMember,
+      updateMonthData, addNewYear, deleteYear, addMember, removeMember, editMember,
       closeGroup, reopenGroup,
     }}>
       {children}

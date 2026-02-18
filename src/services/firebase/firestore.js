@@ -197,6 +197,12 @@ export const saveYearData = async (year, data, username) => {
   await setDoc(doc(db, 'groups', GROUP_ID, 'years', String(safeYear)), { ...validatedData, ...auditUpdate(username) });
 };
 
+export const deleteYearData = async (year) => {
+  if (!isFirebaseConfigured) return;
+  const safeYear = assertValidYear(year);
+  await deleteDoc(doc(db, 'groups', GROUP_ID, 'years', String(safeYear)));
+};
+
 export const getAvailableYears = async () => {
   if (!isFirebaseConfigured) return [];
   const snap = await getDocs(collection(db, 'groups', GROUP_ID, 'years'));

@@ -203,7 +203,7 @@ export default function MonthlyPage() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader titleKey="monthlyLedger" />
+      <SectionHeader titleKey="monthlyLedger" subtitle={t(T.monthlyLedgerDesc, lang)} />
       <div className="animate-fade-up delay-1 grid grid-cols-6 md:flex gap-1">
         {data.months.map((m, i) => (
           <button key={i} onClick={() => { setSel(i); setPage(1); }}

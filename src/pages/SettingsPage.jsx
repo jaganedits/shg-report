@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, TrendingUp, Shield, User, UserPlus, Edit3, Trash2, Save, X, Lock, Key, Check, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Users, TrendingUp, Shield, User, UserPlus, Edit3, Trash2, Save, X, Lock, Key, Check, AlertTriangle, ArrowRight, Calendar, Plus } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { SectionHeader, ECard, ECardHeader, FormInput, PasswordInput, Btn } from '@/components/shared';
+import { SectionHeader, ECard, ECardHeader, FormInput, PasswordInput, Btn, ConfirmDialog } from '@/components/shared';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import {
   assertStrongPassword,
   assertValidPersonName,
@@ -32,7 +33,7 @@ export default function SettingsPage() {
     reactivateUser: onReactivateUser,
     changeMyPassword: onChangeMyPassword,
   } = useAuth();
-  const { members, groupClosed, closeGroup: onCloseGroup, reopenGroup: onReopenGroup, allYearsData, groupInfo } = useData();
+  const { members, groupClosed, closeGroup: onCloseGroup, reopenGroup: onReopenGroup, allYearsData, groupInfo, addNewYear, deleteYear } = useData();
   const { toast } = useToast();
 
   const [closeReason, setCloseReason] = useState('');
@@ -56,6 +57,21 @@ export default function SettingsPage() {
   const years = Object.keys(allYearsData).map(Number).sort();
   const totalAllYearsSavings = years.reduce((s, y) => s + getYearSummary(allYearsData[y]).totalSavings, 0);
   const totalAllYearsLoans = years.reduce((s, y) => s + getYearSummary(allYearsData[y]).totalLoans, 0);
+
+  // Year management
+  const currentCalendarYear = new Date().getFullYear();
+  const yearOptions = [];
+  for (let y = currentCalendarYear - 10; y <= currentCalendarYear + 5; y++) {
+    if (!years.includes(y)) yearOptions.push(y);
+  }
+  const handleAddYear = (yearStr) => {
+    addNewYear(parseInt(yearStr, 10));
+  };
+  const yearHasData = (y) => {
+    const yd = allYearsData[y];
+    if (!yd) return false;
+    return yd.months.some(m => m.members.some(mem => (mem.saving || 0) > 0 || (mem.loanTaken || 0) > 0 || (mem.loanRepayment || 0) > 0));
+  };
 
   const handleCreateUser = async () => {
     if (newPassword !== newConfirmPw) {
@@ -376,8 +392,63 @@ export default function SettingsPage() {
         </div>
       </ECard>
 
+      {isAdmin && (
+        <ECard delay={isAdmin ? 2 : 1}>
+          <ECardHeader titleKey="yearManagement" />
+          <div className="p-4 space-y-4">
+            {/* Add new year */}
+            {!groupClosed && yearOptions.length > 0 && (
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-terracotta/8 shrink-0"><Calendar className="w-4 h-4 text-terracotta" /></div>
+                <Select onValueChange={handleAddYear}>
+                  <SelectTrigger className="w-44 h-9">
+                    <SelectValue placeholder={t(T.addNewYear, lang)} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map(y => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Existing years list */}
+            <div>
+              <p className="text-[10px] text-smoke uppercase tracking-wider font-semibold mb-2">{t(T.existingYears, lang)} ({years.length})</p>
+              <div className="space-y-1.5">
+                {years.map(y => {
+                  const hasData = yearHasData(y);
+                  return (
+                    <div key={y} className="flex items-center justify-between bg-cream-dark/20 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-smoke/50" />
+                        <span className="font-display text-xs font-bold text-charcoal">{y}</span>
+                        {hasData && <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-forest/10 text-forest">{t(T.hasData, lang)}</span>}
+                        {!hasData && <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-sand/50 text-smoke">{t(T.emptyYear, lang)}</span>}
+                      </div>
+                      {!hasData ? (
+                        <ConfirmDialog
+                          trigger={<Button variant="ghost" size="icon-sm" className="text-smoke hover:text-ruby"><Trash2 className="w-3.5 h-3.5" /></Button>}
+                          title={`Delete year ${y}?`}
+                          description="This will permanently remove this year and all its empty records."
+                          confirmLabel={t(T.delete, lang)}
+                          onConfirm={() => deleteYear(y)}
+                          variant="danger"
+                        />
+                      ) : (
+                        <span className="text-[9px] text-smoke/50 italic">{t(T.cannotDeleteWithData, lang)}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </ECard>
+      )}
+
       {isAdmin ? (
-        <ECard delay={2}>
+        <ECard delay={isAdmin ? 3 : 2}>
           <ECardHeader titleKey="groupClosing" />
           <div className="p-4">
             {groupClosed ? (
