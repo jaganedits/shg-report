@@ -472,6 +472,45 @@ export function DataProvider({ children }) {
     toast({ title: 'Group reopened', variant: 'success' });
   }, [currentUsername, requireAdminAction, showWriteError]);
 
+  const deleteAllGroupData = useCallback(async () => {
+    if (!requireAdminAction('delete all group data')) return;
+    if (!groupClosed) {
+      toast({ title: 'Group must be closed first', variant: 'destructive' });
+      return;
+    }
+
+    const yearKeys = Object.keys(allYearsData).map(Number);
+
+    // Delete from Firestore
+    if (isFirebaseConfigured) {
+      for (const yr of yearKeys) {
+        try {
+          await firestore.deleteYearData(yr);
+        } catch (err) {
+          showWriteError(err, `Failed to delete year ${yr}`);
+          return;
+        }
+      }
+      try {
+        await firestore.updateGroupInfo({ isClosed: false }, currentUsername);
+      } catch (err) {
+        showWriteError(err, 'Failed to reset group status');
+      }
+    }
+
+    // Clear local state
+    setAllYearsData({});
+    setSelectedYear(null);
+    setGroupClosed(false);
+
+    void firestore.logActivity({
+      type: 'group_data_delete',
+      user: currentUsername,
+      detail: `Deleted all group data (${yearKeys.length} years: ${yearKeys.join(', ')})`,
+    });
+    toast({ title: 'All group data deleted', variant: 'success' });
+  }, [allYearsData, currentUsername, groupClosed, requireAdminAction, showWriteError]);
+
   return (
     <DataContext.Provider value={{
       allYearsData, selectedYear, setSelectedYear,
@@ -479,7 +518,7 @@ export function DataProvider({ children }) {
       currentData, summary,
       groupInfo, firestoreLoaded,
       updateMonthData, addNewYear, deleteYear, addMember, removeMember, editMember,
-      closeGroup, reopenGroup,
+      closeGroup, reopenGroup, deleteAllGroupData,
     }}>
       {children}
     </DataContext.Provider>

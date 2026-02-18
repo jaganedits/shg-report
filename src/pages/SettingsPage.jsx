@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Users, TrendingUp, Shield, User, UserPlus, Edit3, Trash2, Save, X, Lock, Key, Check, AlertTriangle, ArrowRight, Calendar, Plus } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Users, TrendingUp, Shield, User, UserPlus, Edit3, Trash2, Save, X, Lock, Key, Check, AlertTriangle, ArrowRight, Calendar, Plus, Download, FileSpreadsheet } from 'lucide-react';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
@@ -33,7 +33,7 @@ export default function SettingsPage() {
     reactivateUser: onReactivateUser,
     changeMyPassword: onChangeMyPassword,
   } = useAuth();
-  const { members, groupClosed, closeGroup: onCloseGroup, reopenGroup: onReopenGroup, allYearsData, groupInfo, addNewYear, deleteYear } = useData();
+  const { members, groupClosed, closeGroup: onCloseGroup, reopenGroup: onReopenGroup, deleteAllGroupData, allYearsData, groupInfo, addNewYear, deleteYear } = useData();
   const { toast } = useToast();
 
   const [closeReason, setCloseReason] = useState('');
@@ -71,6 +71,90 @@ export default function SettingsPage() {
     const yd = allYearsData[y];
     if (!yd) return false;
     return yd.months.some(m => m.members.some(mem => (mem.saving || 0) > 0 || (mem.loanTaken || 0) > 0 || (mem.loanRepayment || 0) > 0));
+  };
+
+  // ── Export All Years Data to Excel ──
+  const exportAllYearsToExcel = useCallback(async () => {
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+    const sortedYears = Object.keys(allYearsData).map(Number).sort();
+
+    // Summary sheet
+    const summaryRows = sortedYears.map(y => {
+      const s = getYearSummary(allYearsData[y]);
+      return {
+        'Year': y,
+        'Total Savings': s.totalSavings,
+        'Total Loans': s.totalLoans,
+        'Total Interest': s.totalInterest,
+        'Total Repayments': s.totalRepayments,
+        'Active Months': s.activeSavingMonths,
+        'Loans Issued': s.loansIssued,
+        'Members': members.length,
+      };
+    });
+    const summaryWs = XLSX.utils.json_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+
+    // Per-year sheets
+    sortedYears.forEach(y => {
+      const yearData = allYearsData[y];
+      const rows = [];
+      yearData.months.forEach(month => {
+        month.members.forEach(mem => {
+          const member = members.find(m => m.id === mem.memberId);
+          rows.push({
+            'Month': month.month,
+            'Member': member?.name || `Member ${mem.memberId}`,
+            'Member (Tamil)': member?.nameTA || '',
+            'Saving': mem.saving || 0,
+            'Cumulative': mem.cumulative || 0,
+            'Loan Taken': mem.loanTaken || 0,
+            'Loan Repayment': mem.loanRepayment || 0,
+            'Old Loan': mem.oldLoan || 0,
+            'Old Interest': mem.oldInterest || 0,
+            'Current Interest': mem.currentInterest || 0,
+            'Balance': mem.balance || 0,
+          });
+        });
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, String(y));
+    });
+
+    const safeName = groupInfo.nameEN.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
+    const filename = `${safeName}_AllData_${sortedYears[0]}-${sortedYears[sortedYears.length - 1]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    return true;
+  }, [allYearsData, members, groupInfo]);
+
+  // ── Close Group + Auto Export ──
+  const handleCloseAndExport = async () => {
+    try {
+      await exportAllYearsToExcel();
+      toast({ title: t(T.groupClosedExported, lang), variant: 'success' });
+    } catch {
+      toast({ title: 'Export failed', variant: 'destructive' });
+      return;
+    }
+    onCloseGroup();
+  };
+
+  // ── Export then Delete All ──
+  const [deleteStep, setDeleteStep] = useState(null); // null | 'exported'
+  const handleExportBeforeDelete = async () => {
+    try {
+      await exportAllYearsToExcel();
+      toast({ title: t(T.dataExported, lang), variant: 'success' });
+      setDeleteStep('exported');
+    } catch {
+      toast({ title: 'Export failed', variant: 'destructive' });
+    }
+  };
+  const handleConfirmDeleteAll = async () => {
+    await deleteAllGroupData();
+    setDeleteStep(null);
+    toast({ title: t(T.allDataDeleted, lang), variant: 'success' });
   };
 
   const handleCreateUser = async () => {
@@ -449,10 +533,12 @@ export default function SettingsPage() {
 
       {isAdmin ? (
         <ECard delay={isAdmin ? 3 : 2}>
-          <ECardHeader titleKey="groupClosing" />
+          <ECardHeader titleKey="groupClosing"
+            action={years.length > 0 && <Btn onClick={exportAllYearsToExcel} icon={Download} variant="ghost" size="xs">{t(T.exportAllData, lang)}</Btn>} />
           <div className="p-4">
             {groupClosed ? (
               <div className="space-y-4">
+                {/* Closed banner */}
                 <div className="bg-ruby/8 border border-ruby/20 rounded-xl p-4 flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-ruby shrink-0 mt-0.5" />
                   <div>
@@ -460,7 +546,47 @@ export default function SettingsPage() {
                     <p className="text-[11px] text-ruby/70 mt-1">{t(T.groupClosedDetail, lang)}</p>
                   </div>
                 </div>
+
                 <Btn onClick={onReopenGroup} icon={ArrowRight} variant="success" size="md">{t(T.reopenGroup, lang)}</Btn>
+
+                {/* Delete All Data section */}
+                <div className="border border-ruby/20 rounded-xl p-4 mt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trash2 className="w-4 h-4 text-ruby" />
+                    <h4 className="font-display text-sm font-semibold text-ruby">{t(T.deleteGroupData, lang)}</h4>
+                  </div>
+                  <p className="text-[11px] text-smoke mb-3">{t(T.deleteGroupDataDesc, lang)}</p>
+
+                  {deleteStep !== 'exported' ? (
+                    <Btn onClick={handleExportBeforeDelete} icon={Download} variant="danger" size="md">
+                      {t(T.exportAndDelete, lang)}
+                    </Btn>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="bg-forest/8 border border-forest/20 rounded-lg px-3 py-2 text-[11px] flex items-center gap-2 text-forest">
+                        <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                        {t(T.dataExported, lang)}
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm"><Trash2 className="w-3.5 h-3.5" /> {t(T.confirmDeleteBtn, lang)}</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-ruby" />{t(T.confirmDeleteAll, lang)}</AlertDialogTitle>
+                            <AlertDialogDescription>{t(T.confirmDeleteAllDesc, lang)}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setDeleteStep(null)}>{t(T.cancel, lang)}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDeleteAll} className="bg-ruby hover:bg-ruby/80">
+                              <Trash2 className="w-3.5 h-3.5" /> {t(T.confirmDeleteBtn, lang)}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -474,7 +600,7 @@ export default function SettingsPage() {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-ruby" />{t(T.confirmClose, lang)}</AlertDialogTitle>
-                        <AlertDialogDescription>{t(T.groupClosingDesc, lang)}</AlertDialogDescription>
+                        <AlertDialogDescription>{t(T.groupClosingDesc, lang)}<br /><span className="text-forest mt-1 block">{t(T.closeAndExport, lang)} — all data will be exported to Excel automatically.</span></AlertDialogDescription>
                       </AlertDialogHeader>
                       <div className="py-2">
                         <Label>{t(T.reasonClosing, lang)}</Label>
@@ -482,8 +608,8 @@ export default function SettingsPage() {
                       </div>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t(T.cancel, lang)}</AlertDialogCancel>
-                        <AlertDialogAction onClick={onCloseGroup} className="bg-ruby hover:bg-ruby/80">
-                          <Check className="w-3.5 h-3.5" /> {t(T.confirmCloseBtn, lang)}
+                        <AlertDialogAction onClick={handleCloseAndExport} className="bg-ruby hover:bg-ruby/80">
+                          <Check className="w-3.5 h-3.5" /> {t(T.closeAndExport, lang)}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
