@@ -16,3 +16,7 @@ export function formatCurrency(amount) {
 export function formatNumber(num) {
   return new Intl.NumberFormat('en-IN').format(num)
 }
+
+export function getCssColor(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}

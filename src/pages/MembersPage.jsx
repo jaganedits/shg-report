@@ -1,19 +1,71 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { Users, UserPlus, Plus, X, Edit3, Trash2, Check, Search, ArrowUpDown, ArrowUp, ArrowDown, LayoutGrid, Table2, Save, SearchX } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Sector, ResponsiveContainer } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getCssColor } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import useViewMode from '@/lib/useViewMode';
 import { PALETTE, PAGE_SIZE } from '@/lib/constants';
 import { transliterateToTamil } from '@/lib/transliterate';
 import { SectionHeader, ECard, ECardHeader, FormInput, Btn, TH, TD, ConfirmDialog, PageSkeleton, Pagination } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 
+const renderActiveShape = (props) => {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+  const charcoal = getCssColor('--color-charcoal');
+  const smoke = getCssColor('--color-smoke');
+  const brass = getCssColor('--color-brass');
+  return (
+    <g>
+      <text x={cx} y={cy - 6} textAnchor="middle" fill={charcoal} fontSize={11} fontWeight={600} fontFamily="Playfair Display, serif">
+        {payload.name}
+      </text>
+      <text x={cx} y={cy + 12} textAnchor="middle" fill={smoke} fontSize={10} fontFamily="JetBrains Mono, monospace">
+        {formatCurrency(value)}
+      </text>
+      <text x={cx} y={cy + 26} textAnchor="middle" fill={brass} fontSize={9} fontFamily="DM Sans, sans-serif">
+        {`${(percent * 100).toFixed(1)}%`}
+      </text>
+      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+      <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 4} outerRadius={outerRadius + 8} fill={fill} />
+    </g>
+  );
+};
+
+function ActiveShapePie({ data }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const onEnter = useCallback((_, index) => setActiveIndex(index), []);
+  const cream = getCssColor('--color-cream');
+
+  return (
+    <ResponsiveContainer width="100%" height={240}>
+      <PieChart>
+        <Pie
+          activeIndex={activeIndex}
+          activeShape={renderActiveShape}
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={55}
+          outerRadius={85}
+          dataKey="value"
+          strokeWidth={2}
+          stroke={cream}
+          onMouseEnter={onEnter}
+        >
+          {data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
+        </Pie>
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
 export default function MembersPage() {
   const lang = useLang();
+  useTheme(); // subscribe to theme changes so chart colors re-render
   const { isAdmin } = useAuth();
   const { currentData: data, members, addMember: onAdd, removeMember: onRemove, editMember: onEdit } = useData();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -36,21 +88,21 @@ export default function MembersPage() {
 
   if (!data) return <PageSkeleton type="members" />;
 
-  const summaries = members.map(m => {
+  const summaries = useMemo(() => members.map(m => {
     const totalSaved = data.months.reduce((s, mo) => { const mem = mo.members.find(mm => mm.memberId === m.id); return s + (mem ? mem.saving : 0); }, 0);
     const totalLoan = data.months.reduce((s, mo) => { const mem = mo.members.find(mm => mm.memberId === m.id); return s + (mem ? mem.loanTaken : 0); }, 0);
     const totalInterest = data.months.reduce((s, mo) => { const mem = mo.members.find(mm => mm.memberId === m.id); return s + (mem ? mem.interest : 0); }, 0);
     const last = data.months[data.months.length - 1];
     const lastMem = last?.members.find(mm => mm.memberId === m.id);
     return { ...m, totalSaved, totalLoan, totalInterest, finalCumulative: lastMem?.cumulative || 0 };
-  });
+  }), [members, data]);
 
   const filtered = summaries.filter(m => {
     const q = search.toLowerCase();
     return m.name.toLowerCase().includes(q) || (m.nameTA || '').toLowerCase().includes(q);
   });
 
-  const pieData = summaries.map(m => ({ name: m.name, value: m.totalSaved }));
+  const pieData = useMemo(() => summaries.map(m => ({ name: m.name, value: m.totalSaved })), [summaries]);
 
   const toggleSort = (key) => {
     if (sortKey === key) {
@@ -273,14 +325,7 @@ export default function MembersPage() {
         <ECard className="lg:col-span-2" delay={2}>
           <ECardHeader titleKey="savingsShare" />
           <div className="p-4">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" strokeWidth={2} stroke="#FDF6EC" label={false}>
-                  {pieData.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
-                </Pie>
-                <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ background: '#2D2926', color: '#FDF6EC', border: 'none', borderRadius: 12, fontSize: 12 }} labelStyle={{ color: '#FDF6EC' }} itemStyle={{ color: '#FDF6EC' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <ActiveShapePie data={pieData} />
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2 px-1">
               {pieData.map((entry, i) => {
                 const total = pieData.reduce((s, e) => s + e.value, 0);

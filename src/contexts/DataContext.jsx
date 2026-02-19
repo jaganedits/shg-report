@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { isFirebaseConfigured } from '@/services/firebase/config';
 import * as firestore from '@/services/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -84,12 +84,16 @@ export function DataProvider({ children }) {
     if (!user?.uid) return;
     const loadFromFirestore = async () => {
       try {
-        const gInfo = await firestore.getGroupInfo();
+        // Fetch group info, members, and years in parallel
+        const [gInfo, firestoreMembers, availableYears] = await Promise.all([
+          firestore.getGroupInfo(),
+          firestore.getMembers(),
+          firestore.getAvailableYears(),
+        ]);
         if (gInfo) {
           setGroupInfo(prev => ({ ...prev, ...gInfo }));
           if (gInfo.isClosed) setGroupClosed(true);
         }
-        const firestoreMembers = await firestore.getMembers();
         if (firestoreMembers.length > 0) {
           const membersWithIds = firestoreMembers.map((m, i) => ({
             id: m.id ? (typeof m.id === 'number' ? m.id : i + 1) : i + 1,
@@ -99,13 +103,15 @@ export function DataProvider({ children }) {
           }));
           setMembers(membersWithIds);
         }
-        const availableYears = await firestore.getAvailableYears();
         if (availableYears.length > 0) {
-          const yearsData = {};
-          for (const year of availableYears) {
-            const yearData = await firestore.getYearData(year);
-            if (yearData) yearsData[year] = yearData;
-          }
+          // Fetch all year data in parallel
+          const yearEntries = await Promise.all(
+            availableYears.map(async (year) => {
+              const yearData = await firestore.getYearData(year);
+              return yearData ? [year, yearData] : null;
+            })
+          );
+          const yearsData = Object.fromEntries(yearEntries.filter(Boolean));
           if (Object.keys(yearsData).length > 0) setAllYearsData(yearsData);
         }
       } catch (err) {
@@ -117,9 +123,9 @@ export function DataProvider({ children }) {
     loadFromFirestore();
   }, [authLoading, user?.uid]);
 
-  const years = Object.keys(allYearsData).map(Number).sort();
-  const currentData = allYearsData[selectedYear];
-  const summary = currentData ? getYearSummary(currentData) : null;
+  const years = useMemo(() => Object.keys(allYearsData).map(Number).sort(), [allYearsData]);
+  const currentData = useMemo(() => allYearsData[selectedYear], [allYearsData, selectedYear]);
+  const summary = useMemo(() => currentData ? getYearSummary(currentData) : null, [currentData]);
 
   const saveYearToFirestore = useCallback(async (year, yearData) => {
     if (!isFirebaseConfigured) return;
@@ -509,15 +515,22 @@ export function DataProvider({ children }) {
     toast({ title: 'All group data deleted', variant: 'success' });
   }, [allYearsData, currentUsername, groupClosed, requireAdminAction, showWriteError]);
 
+  const contextValue = useMemo(() => ({
+    allYearsData, selectedYear, setSelectedYear,
+    members, groupClosed, years,
+    currentData, summary,
+    groupInfo, firestoreLoaded,
+    updateMonthData, addNewYear, deleteYear, addMember, removeMember, editMember,
+    closeGroup, reopenGroup, deleteAllGroupData,
+  }), [
+    allYearsData, selectedYear, members, groupClosed, years,
+    currentData, summary, groupInfo, firestoreLoaded,
+    updateMonthData, addNewYear, deleteYear, addMember, removeMember, editMember,
+    closeGroup, reopenGroup, deleteAllGroupData,
+  ]);
+
   return (
-    <DataContext.Provider value={{
-      allYearsData, selectedYear, setSelectedYear,
-      members, groupClosed, years,
-      currentData, summary,
-      groupInfo, firestoreLoaded,
-      updateMonthData, addNewYear, deleteYear, addMember, removeMember, editMember,
-      closeGroup, reopenGroup, deleteAllGroupData,
-    }}>
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );

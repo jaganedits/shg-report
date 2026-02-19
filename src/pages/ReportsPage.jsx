@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Calendar, BarChart2, Download, Printer, LayoutGrid, Table2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import T, { t } from '@/lib/i18n';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, getCssColor } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import useViewMode from '@/lib/useViewMode';
 import { getYearSummary } from '@/data/sampleData';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { SectionHeader, ECard, ECardHeader, CustomTooltip, TH, TD, SearchableSel
 
 export default function ReportsPage() {
   const lang = useLang();
+  const theme = useTheme();
   const { currentData: data, members, allYearsData, selectedYear: year } = useData();
   const [view, setView] = useState('monthly');
   const [selectedMemberId, setSelectedMemberId] = useState('all');
@@ -20,6 +22,14 @@ export default function ReportsPage() {
   const years = Object.keys(allYearsData).map(Number).sort();
 
   if (!data) return <PageSkeleton type="table" />;
+
+  const cc = {
+    sand: getCssColor('--color-sand'),
+    smoke: getCssColor('--color-smoke'),
+    terracotta: getCssColor('--color-terracotta'),
+    ruby: getCssColor('--color-ruby'),
+    jade: getCssColor('--color-jade'),
+  };
 
   const getMonthlyData = (memberId) => {
     return data.months.map(m => {
@@ -62,11 +72,12 @@ export default function ReportsPage() {
     });
   };
 
-  const monthlyData = getMonthlyData(selectedMemberId);
-  const yearlyData = getYearlyData(selectedMemberId);
-  const memberName = selectedMemberId === 'all'
+  const monthlyData = useMemo(() => getMonthlyData(selectedMemberId), [data, selectedMemberId]);
+  const yearlyData = useMemo(() => getYearlyData(selectedMemberId), [allYearsData, selectedMemberId, years]);
+  const memberName = useMemo(() => selectedMemberId === 'all'
     ? t(T.allMembers, lang)
-    : (() => { const m = members.find(mm => mm.id === Number(selectedMemberId)); return lang === 'ta' && m?.nameTA ? m.nameTA : m?.name || ''; })();
+    : (() => { const m = members.find(mm => mm.id === Number(selectedMemberId)); return lang === 'ta' && m?.nameTA ? m.nameTA : m?.name || ''; })(),
+  [selectedMemberId, members, lang]);
 
   const exportToExcel = () => {
     import('xlsx').then(XLSX => {
@@ -229,13 +240,13 @@ export default function ReportsPage() {
             <div className="p-4">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={monthlyData.map(d => ({ ...d, name: d.month.substring(0, 3) }))} barCategoryGap="15%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: '#8A8380' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#8A8380' }} axisLine={false} tickLine={false} width={60} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={cc.sand} vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: cc.smoke }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: cc.smoke }} axisLine={false} tickLine={false} width={60} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="saving" fill="#A0522D" radius={[4, 4, 0, 0]} name={t(T.monthlySavingCol, lang)} />
-                  <Bar dataKey="newLoan" fill="#9B2335" radius={[4, 4, 0, 0]} name={t(T.newLoan, lang)} />
-                  <Bar dataKey="currentInterest" fill="#2E7D5B" radius={[4, 4, 0, 0]} name={t(T.thisMonthInterest, lang)} />
+                  <Bar dataKey="saving" fill={cc.terracotta} radius={[4, 4, 0, 0]} name={t(T.monthlySavingCol, lang)} />
+                  <Bar dataKey="newLoan" fill={cc.ruby} radius={[4, 4, 0, 0]} name={t(T.newLoan, lang)} />
+                  <Bar dataKey="currentInterest" fill={cc.jade} radius={[4, 4, 0, 0]} name={t(T.thisMonthInterest, lang)} />
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex gap-4 mt-2 justify-center text-[10px] text-smoke">
@@ -312,13 +323,13 @@ export default function ReportsPage() {
             <div className="p-4">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={yearlyData.map(d => ({ ...d, name: String(d.year) }))} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: '#8A8380' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#8A8380' }} axisLine={false} tickLine={false} width={60} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={cc.sand} vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: cc.smoke }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: cc.smoke }} axisLine={false} tickLine={false} width={60} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="saving" fill="#A0522D" radius={[4, 4, 0, 0]} name={t(T.totalSavings, lang)} />
-                  <Bar dataKey="newLoan" fill="#9B2335" radius={[4, 4, 0, 0]} name={t(T.totalLoans, lang)} />
-                  <Bar dataKey="currentInterest" fill="#2E7D5B" radius={[4, 4, 0, 0]} name={t(T.thisMonthInterest, lang)} />
+                  <Bar dataKey="saving" fill={cc.terracotta} radius={[4, 4, 0, 0]} name={t(T.totalSavings, lang)} />
+                  <Bar dataKey="newLoan" fill={cc.ruby} radius={[4, 4, 0, 0]} name={t(T.totalLoans, lang)} />
+                  <Bar dataKey="currentInterest" fill={cc.jade} radius={[4, 4, 0, 0]} name={t(T.thisMonthInterest, lang)} />
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex gap-4 mt-2 justify-center text-[10px] text-smoke">

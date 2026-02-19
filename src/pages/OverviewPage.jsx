@@ -5,7 +5,8 @@ import { useLang } from '@/contexts/LangContext';
 import { useData } from '@/contexts/DataContext';
 import { useAuth } from '@/contexts/AuthContext';
 import T, { t } from '@/lib/i18n';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getCssColor } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MetricCard, SectionHeader, ECard, ECardHeader, CustomTooltip, RecentActivity, PageSkeleton } from '@/components/shared';
 
 const HAPPY_DAYS = [T.happySunday, T.happyMonday, T.happyTuesday, T.happyWednesday, T.happyThursday, T.happyFriday, T.happySaturday];
@@ -46,6 +47,7 @@ function getGreeting(lang) {
 
 export default function OverviewPage() {
   const lang = useLang();
+  const theme = useTheme();
   const { currentData: data, summary, selectedYear: year, members } = useData();
   const { user } = useAuth();
   const greeting = useMemo(() => getGreeting(lang), [lang]);
@@ -53,32 +55,43 @@ export default function OverviewPage() {
 
   if (!data || !summary) return <PageSkeleton type="dashboard" />;
 
-  const savingsChart = data.months.map(m => ({ name: m.month.substring(0, 3), saving: m.totalSaving, cumulative: m.totalCumulative }));
-  const loanChart = data.months.map(m => ({ name: m.month.substring(0, 3), loans: m.members.reduce((s, mem) => s + mem.loanTaken, 0), interest: m.members.reduce((s, mem) => s + mem.interest, 0) }));
+  const cc = {
+    sand: getCssColor('--color-sand'),
+    smoke: getCssColor('--color-smoke'),
+    terracotta: getCssColor('--color-terracotta'),
+    brass: getCssColor('--color-brass'),
+    ruby: getCssColor('--color-ruby'),
+    jade: getCssColor('--color-jade'),
+  };
 
-  const overdueMembers = [];
-  const lastMonth = data.months[data.months.length - 1];
-  if (lastMonth) {
-    lastMonth.members.forEach(mem => {
-      if ((mem.balance || mem.loanBalance || 0) > 0) {
-        // Count consecutive months with outstanding balance
-        let overdueMonths = 0;
-        for (let i = data.months.length - 1; i >= 0; i--) {
-          const m = data.months[i].members.find(mm => mm.memberId === mem.memberId);
-          if (m && (m.balance || m.loanBalance || 0) > 0) overdueMonths++;
-          else break;
+  const savingsChart = useMemo(() => data.months.map(m => ({ name: m.month.substring(0, 3), saving: m.totalSaving, cumulative: m.totalCumulative })), [data]);
+  const loanChart = useMemo(() => data.months.map(m => ({ name: m.month.substring(0, 3), loans: m.members.reduce((s, mem) => s + mem.loanTaken, 0), interest: m.members.reduce((s, mem) => s + mem.interest, 0) })), [data]);
+
+  const overdueMembers = useMemo(() => {
+    const result = [];
+    const lastMonth = data.months[data.months.length - 1];
+    if (lastMonth) {
+      lastMonth.members.forEach(mem => {
+        if ((mem.balance || mem.loanBalance || 0) > 0) {
+          let overdueMonths = 0;
+          for (let i = data.months.length - 1; i >= 0; i--) {
+            const m = data.months[i].members.find(mm => mm.memberId === mem.memberId);
+            if (m && (m.balance || m.loanBalance || 0) > 0) overdueMonths++;
+            else break;
+          }
+          if (overdueMonths >= 2) {
+            const info = members.find(m => m.id === mem.memberId);
+            result.push({
+              name: lang === 'ta' && info?.nameTA ? info.nameTA : info?.name || `#${mem.memberId}`,
+              balance: mem.balance || mem.loanBalance || 0,
+              months: overdueMonths,
+            });
+          }
         }
-        if (overdueMonths >= 2) {
-          const info = members.find(m => m.id === mem.memberId);
-          overdueMembers.push({
-            name: lang === 'ta' && info?.nameTA ? info.nameTA : info?.name || `#${mem.memberId}`,
-            balance: mem.balance || mem.loanBalance || 0,
-            months: overdueMonths,
-          });
-        }
-      }
-    });
-  }
+      });
+    }
+    return result;
+  }, [data, members, lang]);
 
   return (
     <div className="space-y-5">
@@ -133,11 +146,11 @@ export default function OverviewPage() {
           <div className="p-3 md:p-4" role="img" aria-label={t(T.monthlySavingsFlow, lang)}>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={savingsChart} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: '#8A8380' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#8A8380' }} axisLine={false} tickLine={false} width={50} />
+                <CartesianGrid strokeDasharray="3 3" stroke={cc.sand} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: cc.smoke }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: cc.smoke }} axisLine={false} tickLine={false} width={50} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="saving" fill="#A0522D" radius={[6, 6, 0, 0]} name={t(T.monthlySaving, lang)} />
+                <Bar dataKey="saving" fill={cc.terracotta} radius={[6, 6, 0, 0]} name={t(T.monthlySaving, lang)} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -147,12 +160,12 @@ export default function OverviewPage() {
           <div className="p-3 md:p-4" role="img" aria-label={t(T.cumulativeGrowth, lang)}>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={savingsChart}>
-                <defs><linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#C69749" stopOpacity={0.3} /><stop offset="95%" stopColor="#C69749" stopOpacity={0.02} /></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: '#8A8380' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#8A8380' }} axisLine={false} tickLine={false} width={50} />
+                <defs><linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={cc.brass} stopOpacity={0.3} /><stop offset="95%" stopColor={cc.brass} stopOpacity={0.02} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={cc.sand} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: cc.smoke }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: cc.smoke }} axisLine={false} tickLine={false} width={50} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="cumulative" stroke="#C69749" strokeWidth={2.5} fill="url(#cumGrad)" name={t(T.cumulative, lang)} />
+                <Area type="monotone" dataKey="cumulative" stroke={cc.brass} strokeWidth={2.5} fill="url(#cumGrad)" name={t(T.cumulative, lang)} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -165,12 +178,12 @@ export default function OverviewPage() {
           <div className="p-3 md:p-4" role="img" aria-label={t(T.loanActivity, lang)}>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={loanChart} barCategoryGap="25%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8DDD0" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: '#8A8380' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#8A8380' }} axisLine={false} tickLine={false} width={50} />
+                <CartesianGrid strokeDasharray="3 3" stroke={cc.sand} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'DM Sans', fill: cc.smoke }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fontFamily: 'JetBrains Mono', fill: cc.smoke }} axisLine={false} tickLine={false} width={50} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="loans" fill="#9B2335" radius={[6, 6, 0, 0]} name={t(T.loansTaken, lang)} />
-                <Bar dataKey="interest" fill="#2E7D5B" radius={[6, 6, 0, 0]} name={t(T.interest, lang)} />
+                <Bar dataKey="loans" fill={cc.ruby} radius={[6, 6, 0, 0]} name={t(T.loansTaken, lang)} />
+                <Bar dataKey="interest" fill={cc.jade} radius={[6, 6, 0, 0]} name={t(T.interest, lang)} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex gap-4 mt-2 justify-center text-[10px] text-smoke">
