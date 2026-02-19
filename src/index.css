@@ -26,6 +26,42 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
+/* Dark mode color overrides */
+.dark {
+  --color-cream: #1A1614;
+  --color-cream-dark: #231F1C;
+  --color-ivory: #2D2926;
+  --color-charcoal: #E8DDD0;
+  --color-charcoal-light: #B8ADA0;
+  --color-smoke: #8A8380;
+  --color-sand: #3D3733;
+  --color-sand-dark: #4A4440;
+  --color-terracotta: #C4713E;
+  --color-terracotta-deep: #D4845A;
+  --color-terracotta-light: #A0522D;
+  --color-terracotta-muted: #9A7A5C;
+  --color-brass: #D4A855;
+  --color-brass-light: #B8922E;
+  --color-brass-dark: #E8C97A;
+  --color-forest: #2D5E42;
+  --color-forest-light: #3A7A55;
+  --color-ruby: #C4384E;
+  --color-jade: #4A9D75;
+}
+
+/* Header & mobile nav stay branded in dark mode */
+.dark header,
+.dark .branded-dark {
+  --color-cream: #FDF6EC;
+  --color-cream-dark: #F5EBDA;
+  --color-terracotta-deep: #6B3410;
+  --color-terracotta-light: #D4845A;
+  --color-brass: #C69749;
+  --color-brass-light: #E8C97A;
+  --color-ruby: #9B2335;
+  --color-sand: #E8DDD0;
+}
+
 @layer base {
   * {
     border-color: var(--color-sand);
@@ -36,6 +72,7 @@
     color: var(--color-charcoal);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   #root {
     min-height: 100vh;

@@ -1,4 +1,5 @@
-import { ChevronDown, Shield, User, Globe, Languages, Calendar } from 'lucide-react';
+import { ChevronDown, Shield, User, Globe, Languages, Calendar, Sun, Moon } from 'lucide-react';
+import { useThemeContext } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import T, { t } from '@/lib/i18n';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -7,6 +8,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function AvatarDropdownMenu({ user, lang, setLang, selectedYear, years, onYearChange }) {
+  const { theme, setTheme } = useThemeContext();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -62,6 +64,16 @@ export default function AvatarDropdownMenu({ user, lang, setLang, selectedYear, 
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setLang('ta')} className={cn('font-tamil pb-1', lang === 'ta' ? 'bg-terracotta-deep/10 text-terracotta-deep font-semibold' : '')}>
             <Languages className="w-3 h-3" /> தமிழ்
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuLabel className="px-3 pt-1">{t(T.theme, lang)}</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => setTheme('light')} className={theme === 'light' ? 'bg-terracotta-deep/10 text-terracotta-deep font-semibold' : ''}>
+            <Sun className="w-3 h-3" /> {t(T.lightMode, lang)}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme('dark')} className={theme === 'dark' ? 'bg-terracotta-deep/10 text-terracotta-deep font-semibold' : ''}>
+            <Moon className="w-3 h-3" /> {t(T.darkMode, lang)}
           </DropdownMenuItem>
         </ScrollArea>
       </DropdownMenuContent>

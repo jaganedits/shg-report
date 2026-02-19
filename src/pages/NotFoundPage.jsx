@@ -6,21 +6,21 @@ export default function NotFoundPage() {
   const { lang } = useLang();
 
   return (
-    <div className="min-h-screen bg-[#FDF6EC] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-cream flex items-center justify-center p-6">
       <div className="text-center max-w-md">
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-[#5C2E0E] flex items-center justify-center">
-          <span className="text-2xl font-bold text-[#F5E6D0] font-serif">SA</span>
+        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-terracotta-deep flex items-center justify-center">
+          <span className="text-2xl font-bold text-cream-dark font-serif">SA</span>
         </div>
-        <h1 className="text-6xl font-bold text-[#5C2E0E] mb-2">404</h1>
-        <p className="text-xl text-[#5C2E0E] font-semibold mb-2">
+        <h1 className="text-6xl font-bold text-terracotta-deep mb-2">404</h1>
+        <p className="text-xl text-terracotta-deep font-semibold mb-2">
           {t(T.pageNotFound, lang)}
         </p>
-        <p className="text-[#6B5E53] mb-6">
+        <p className="text-smoke mb-6">
           {t(T.pageNotFoundDesc, lang)}
         </p>
         <Link
           to="/overview"
-          className="inline-block px-6 py-2.5 bg-[#5C2E0E] text-[#FDF6EC] rounded-xl font-medium hover:bg-[#7A3A15] transition-colors"
+          className="inline-block px-6 py-2.5 bg-terracotta-deep text-cream rounded-xl font-medium hover:bg-terracotta transition-colors"
         >
           {t(T.goHome, lang)}
         </Link>
