@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { LangProvider } from '@/contexts/LangContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DataProvider } from '@/contexts/DataContext';
@@ -54,6 +55,7 @@ export default function App() {
                 <Route path="*" element={<Suspense fallback={<AppSkeleton />}><NotFoundPage /></Suspense>} />
               </Routes>
               <GlobalToasts />
+              <SpeedInsights />
             </DataProvider>
           </AuthProvider>
         </LangProvider>
