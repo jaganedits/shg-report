@@ -34,6 +34,9 @@ const T = {
   myProfile: { en: 'My Profile', ta: 'என் சுயவிவரம்' },
   switchYear: { en: 'Switch Year', ta: 'ஆண்டு மாற்று' },
   language: { en: 'Language', ta: 'மொழி' },
+  theme: { en: 'Theme', ta: 'தீம்' },
+  lightMode: { en: 'Light', ta: 'ஒளி' },
+  darkMode: { en: 'Dark', ta: 'இருள்' },
   logout: { en: 'Logout', ta: 'வெளியேறு' },
 
   // ─── User Management ───
@@ -304,6 +307,39 @@ const T = {
   happyFriday: { en: 'Happy Friday', ta: 'இனிய வெள்ளிக்கிழமை' },
   happySaturday: { en: 'Happy Saturday', ta: 'இனிய சனிக்கிழமை' },
   haveAGreatDay: { en: 'Have a great day', ta: 'நல்ல நாளாக அமையட்டும்' },
+
+  // ─── About Us ───
+  aboutUs: { en: 'About Us', ta: 'எங்களைப் பற்றி' },
+  aboutUsDesc: { en: 'Our story, our founder, our mission', ta: 'எங்கள் கதை, எங்கள் நிறுவனர், எங்கள் நோக்கம்' },
+  tabAbout: { en: 'About', ta: 'பற்றி' },
+  founder: { en: 'Founder', ta: 'நிறுவனர்' },
+  founderOf: { en: 'Founder — Shree Annai Women Self Help Group', ta: 'நிறுவனர் — ஸ்ரீ அன்னை மகளிர் சுய உதவி குழு' },
+  age: { en: 'Age', ta: 'வயது' },
+  groupMember: { en: 'Group Member', ta: 'குழு உறுப்பினர்' },
+  aboutGroup: { en: 'About the Group', ta: 'குழுவைப் பற்றி' },
+  aboutGroupDesc: {
+    en: 'Shree Annai Women Self Help Group was established in January 2019 with a vision to empower women through collective savings and mutual financial support. Founded by Susila, the group brings together women from the community to save regularly, provide affordable loans, and build financial independence for every member\'s family.',
+    ta: 'ஸ்ரீ அன்னை மகளிர் சுய உதவி குழு ஜனவரி 2019 இல் பெண்களை கூட்டு சேமிப்பு மற்றும் பரஸ்பர நிதி ஆதரவு மூலம் மேம்படுத்தும் நோக்கத்துடன் நிறுவப்பட்டது. சுசிலா நிறுவிய இக்குழு, சமூகத்தின் பெண்களை ஒன்றிணைத்து, தொடர்ந்து சேமிக்கவும், குறைந்த வட்டியில் கடன் வழங்கவும், ஒவ்வொரு உறுப்பினரின் குடும்பத்திற்கும் நிதி சுதந்திரத்தை கட்டியெழுப்பவும் செயல்படுகிறது.'
+  },
+  established: { en: 'Established', ta: 'நிறுவப்பட்டது' },
+  totalMembers: { en: 'Total Members', ta: 'மொத்த உறுப்பினர்கள்' },
+  savingsGoal: { en: 'Savings', ta: 'சேமிப்பு' },
+  mission: { en: 'Mission', ta: 'நோக்கம்' },
+  womenPower: { en: 'Women', ta: 'பெண்கள்' },
+  strength: { en: 'Strength', ta: 'வலிமை' },
+  ourVision: { en: 'Our Vision', ta: 'எங்கள் தொலைநோக்கு' },
+  vision1: {
+    en: 'To create a financially independent community where every woman has the power to save, invest, and grow — ensuring a secure future for her family.',
+    ta: 'ஒவ்வொரு பெண்ணும் சேமிக்கவும், முதலீடு செய்யவும், வளரவும் சக்தி கொண்ட நிதி சுதந்திரமான சமூகத்தை உருவாக்குவது — அவரது குடும்பத்திற்கு பாதுகாப்பான எதிர்காலத்தை உறுதி செய்வது.'
+  },
+  vision2: {
+    en: 'To foster unity and trust among women, supporting each other through financial challenges with affordable loans and collective strength.',
+    ta: 'பெண்களிடையே ஒற்றுமையையும் நம்பிக்கையையும் வளர்ப்பது, குறைந்த வட்டி கடன்கள் மற்றும் கூட்டு வலிமையுடன் நிதி சவால்களில் ஒருவருக்கொருவர் ஆதரிப்பது.'
+  },
+  vision3: {
+    en: 'To empower women with financial literacy and decision-making skills, so they become leaders in their homes and community.',
+    ta: 'நிதி அறிவு மற்றும் முடிவெடுக்கும் திறன்களால் பெண்களை மேம்படுத்துவது, அவர்கள் தங்கள் வீடுகளிலும் சமூகத்திலும் தலைவர்களாக மாறுவதற்கு.'
+  },
 
   // ─── 404 Page ───
   pageNotFound: { en: 'Page Not Found', ta: 'பக்கம் கிடைக்கவில்லை' },

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LangProvider } from '@/contexts/LangContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DataProvider } from '@/contexts/DataContext';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ const LoansPage = lazy(() => import('@/pages/LoansPage'));
 const DataEntryPage = lazy(() => import('@/pages/DataEntryPage'));
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const AboutPage = lazy(() => import('@/pages/AboutPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 function PageFallback() {
@@ -33,6 +35,7 @@ function GlobalToasts() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <ThemeProvider>
       <BrowserRouter>
         <LangProvider>
           <AuthProvider>
@@ -48,6 +51,7 @@ export default function App() {
                     <Route path="/entry" element={<Suspense fallback={<PageFallback />}><DataEntryPage /></Suspense>} />
                     <Route path="/reports" element={<Suspense fallback={<PageFallback />}><ReportsPage /></Suspense>} />
                     <Route path="/settings" element={<Suspense fallback={<PageFallback />}><SettingsPage /></Suspense>} />
+                    <Route path="/about" element={<Suspense fallback={<PageFallback />}><AboutPage /></Suspense>} />
                     <Route path="/" element={<Navigate to="/overview" replace />} />
                   </Route>
                 </Route>
@@ -58,6 +62,7 @@ export default function App() {
           </AuthProvider>
         </LangProvider>
       </BrowserRouter>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

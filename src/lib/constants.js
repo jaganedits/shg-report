@@ -1,4 +1,4 @@
-import { Sparkles, Calendar, Users, CreditCard, ClipboardList, BarChart2, Settings } from 'lucide-react';
+import { Sparkles, Calendar, Users, CreditCard, ClipboardList, BarChart2, Settings, Info } from 'lucide-react';
 
 export const PAGE_SIZE = 10;
 
@@ -16,4 +16,5 @@ export const NAV_ITEMS = [
   { id: 'entry', path: '/entry', key: 'tabEntry', icon: ClipboardList },
   { id: 'reports', path: '/reports', key: 'tabReports', icon: BarChart2 },
   { id: 'settings', path: '/settings', key: 'tabSettings', icon: Settings },
+  { id: 'about', path: '/about', key: 'tabAbout', icon: Info },
 ];
